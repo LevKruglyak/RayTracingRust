@@ -18,6 +18,7 @@ mod objects;
 mod ray;
 mod render;
 mod scene;
+mod utils;
 
 const RENDER_WIDTH: u32 = 1000;
 const RENDER_HEIGHT: u32 = 1000;

@@ -143,6 +143,16 @@ impl Gui {
                 ui.add(egui::Slider::new(&mut app.scene.viewport_ratio, 0.1..=10.0));
                 ui.label("Focal length:");
                 ui.add(egui::Slider::new(&mut app.scene.focal_length, 0.01..=2.0));
+                ui.label("Samples per pixel:");
+                ui.add(egui::Slider::new(
+                    &mut app.scene.samples_per_pixel,
+                    1..=1000,
+                ));
+                ui.label("Max ray depth:");
+                ui.add(egui::Slider::new(
+                    &mut app.scene.max_ray_depth,
+                    1..=255,
+                ));
 
                 ui.separator();
                 if ui.button("Render Image").clicked() {
