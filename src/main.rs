@@ -14,14 +14,15 @@ use winit_input_helper::WinitInputHelper;
 use crate::render::RayTracingDemo;
 
 mod gui;
+mod objects;
 mod ray;
 mod render;
 mod scene;
 
-const RENDER_WIDTH: u32 = 600;
-const RENDER_HEIGHT: u32 = 400;
+const RENDER_WIDTH: u32 = 1000;
+const RENDER_HEIGHT: u32 = 1000;
 
-const WINDOW_WIDTH: u32 = 1400;
+const WINDOW_WIDTH: u32 = RENDER_WIDTH;
 const WINDOW_HEIGHT: u32 = RENDER_HEIGHT;
 
 fn main() -> Result<(), Error> {
@@ -40,8 +41,9 @@ fn main() -> Result<(), Error> {
 
     let app = Rc::new(RefCell::new(RayTracingDemo::new(
         RENDER_WIDTH,
-        RENDER_HEIGHT
+        RENDER_HEIGHT,
     )));
+    app.borrow_mut().setup();
 
     let (mut pixels, mut framework) = {
         let window_size = window.inner_size();

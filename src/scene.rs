@@ -35,6 +35,7 @@ pub struct Scene {
     pub camera: Camera,
 }
 
+#[derive(Debug)]
 pub struct SceneSettings {
     pub width: f32,
     pub height: f32,
