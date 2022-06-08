@@ -144,7 +144,7 @@ impl Gui {
         egui::Window::new("Settings")
             .open(&mut self.window_open)
             .show(ctx, |ui| {
-                ui.heading("My egui Application");
+                ui.heading("Render settings");
                 ui.horizontal(|ui| {
                     ui.label("Your name: ");
                     ui.text_edit_singleline(&mut self.name);

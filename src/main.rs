@@ -12,10 +12,12 @@ use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
 
 use crate::render::RayTracingDemo;
-use palette::Srgba;
+use palette::LinSrgba;
 
 mod gui;
+mod ray;
 mod render;
+mod scene;
 
 const WIDTH: u32 = 640;
 const HEIGHT: u32 = 480;
@@ -25,7 +27,7 @@ fn main() -> Result<(), Error> {
     let event_loop = EventLoop::new();
     let mut input = WinitInputHelper::new();
     let window = {
-        let size = LogicalSize::new(WIDTH as f64, HEIGHT as f64);
+        let size = LogicalSize::new(WIDTH as f32, HEIGHT as f32);
         WindowBuilder::new()
             .with_title("Ray Tracing Demo")
             .with_inner_size(size)
@@ -36,8 +38,7 @@ fn main() -> Result<(), Error> {
 
     let app = Rc::new(RefCell::new(RayTracingDemo::new(
         WIDTH,
-        HEIGHT,
-        Srgba::new(1.0, 1.0, 1.0, 1.0),
+        HEIGHT
     )));
 
     let (mut pixels, mut framework) = {
