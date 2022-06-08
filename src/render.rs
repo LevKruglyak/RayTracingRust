@@ -26,7 +26,6 @@ pub struct RayTracingDemo {
 
 impl RayTracingDemo {
     pub fn new(width: u32, height: u32) -> Self {
-        let x = rand::thread_rng();
         Self {
             width,
             height,
