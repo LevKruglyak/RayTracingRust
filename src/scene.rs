@@ -1,5 +1,6 @@
 use cgmath::Vector3;
 
+#[derive(Debug)]
 pub struct Camera {
     pub focal_length: f32,
     pub origin: Vector3<f32>,
@@ -9,41 +10,50 @@ pub struct Camera {
 }
 
 impl Camera {
-    fn new(viewport_width: f32, viewport_height: f32) -> Self {
+    pub fn new(viewport_width: f32, viewport_height: f32, focal_length: f32) -> Self {
         let origin = Vector3::new(0.0, 0.0, 0.0);
         let horizontal = Vector3::new(viewport_width, 0.0, 0.0);
         let vertical = Vector3::new(0.0, viewport_height, 0.0);
 
-        let default_focal_length = 1.0;
-
         Self {
-            focal_length: default_focal_length,
+            focal_length,
             origin,
             horizontal,
             vertical,
             lower_left_corner: origin
                 - horizontal / 2.0
                 - vertical / 2.0
-                - Vector3::new(0.0, 0.0, default_focal_length),
+                - Vector3::new(0.0, 0.0, focal_length),
         }
     }
 }
 
+#[derive(Debug)]
 pub struct Scene {
     pub viewport_width: f32,
     pub viewport_height: f32,
     pub camera: Camera,
 }
 
-impl Scene {
-    pub fn new(width: u32, height: u32) -> Self {
-        let viewport_width = 2.0;
-        let viewport_height = 2.0 * (height as f32) / (width as f32);
+pub struct SceneSettings {
+    pub width: f32,
+    pub height: f32,
+    pub viewport_ratio: f32,
+    pub focal_length: f32,
+}
 
-        Self {
+impl SceneSettings {
+    pub fn build_scene(&self) -> Scene {
+        let viewport_width = self.viewport_ratio;
+        let viewport_height = self.viewport_ratio * self.height / self.width;
+
+        // Camera
+        let camera = Camera::new(viewport_width, viewport_height, self.focal_length);
+
+        Scene {
             viewport_width,
             viewport_height,
-            camera: Camera::new(viewport_width, viewport_height),
+            camera,
         }
     }
 }

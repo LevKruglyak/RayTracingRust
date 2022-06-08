@@ -122,9 +122,6 @@ struct Gui {
     /// Only show the egui window when true.
     window_open: bool,
     app: Rc<RefCell<RayTracingDemo>>,
-    name: String,
-    age: u32,
-    param: f32,
 }
 
 impl Gui {
@@ -133,32 +130,26 @@ impl Gui {
         Self {
             window_open: true,
             app,
-            name: String::from("Lev"),
-            age: 19,
-            param: 0.0,
         }
     }
 
     /// Create the UI using egui.
     fn ui(&mut self, ctx: &Context) {
-        egui::Window::new("Settings")
+        egui::Window::new("Render Settings")
             .open(&mut self.window_open)
             .show(ctx, |ui| {
-                ui.heading("Render settings");
-                ui.horizontal(|ui| {
-                    ui.label("Your name: ");
-                    ui.text_edit_singleline(&mut self.name);
-                });
-                ui.add(egui::Slider::new(&mut self.age, 0..=120).text("age"));
-                ui.add(egui::Slider::new(&mut self.param, 0.0..=1.0).text("parameter"));
-                if ui.button("Click each year").clicked() {
-                    self.age += 1;
-                }
-                ui.label(format!("Hello '{}', age {}", self.name, self.age));
+                let mut app = self.app.borrow_mut();
+                ui.label("Viewport ratio:");
+                ui.add(egui::Slider::new(&mut app.scene.viewport_ratio, 0.1..=10.0));
+                ui.label("Focal length:");
+                ui.add(egui::Slider::new(&mut app.scene.focal_length, 0.01..=2.0));
 
+                ui.separator();
                 if ui.button("Render Image").clicked() {
-                    self.app.borrow_mut().update(self.param);
+                    app.update();
                 }
+
+                ui.label(format!("Last render took: {:?}", app.last_time));
             });
     }
 }

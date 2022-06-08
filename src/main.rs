@@ -12,22 +12,24 @@ use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
 
 use crate::render::RayTracingDemo;
-use palette::LinSrgba;
 
 mod gui;
 mod ray;
 mod render;
 mod scene;
 
-const WIDTH: u32 = 640;
-const HEIGHT: u32 = 480;
+const RENDER_WIDTH: u32 = 600;
+const RENDER_HEIGHT: u32 = 400;
+
+const WINDOW_WIDTH: u32 = 1400;
+const WINDOW_HEIGHT: u32 = RENDER_HEIGHT;
 
 fn main() -> Result<(), Error> {
     env_logger::init();
     let event_loop = EventLoop::new();
     let mut input = WinitInputHelper::new();
     let window = {
-        let size = LogicalSize::new(WIDTH as f32, HEIGHT as f32);
+        let size = LogicalSize::new(WINDOW_WIDTH as f32, WINDOW_HEIGHT as f32);
         WindowBuilder::new()
             .with_title("Ray Tracing Demo")
             .with_inner_size(size)
@@ -37,15 +39,15 @@ fn main() -> Result<(), Error> {
     };
 
     let app = Rc::new(RefCell::new(RayTracingDemo::new(
-        WIDTH,
-        HEIGHT
+        RENDER_WIDTH,
+        RENDER_HEIGHT
     )));
 
     let (mut pixels, mut framework) = {
         let window_size = window.inner_size();
         let scale_factor = window.scale_factor() as f32;
         let surface_texture = SurfaceTexture::new(window_size.width, window_size.height, &window);
-        let pixels = Pixels::new(WIDTH, HEIGHT, surface_texture)?;
+        let pixels = Pixels::new(RENDER_WIDTH, RENDER_HEIGHT, surface_texture)?;
         let framework = Framework::new(
             window_size.width,
             window_size.height,
