@@ -1,9 +1,10 @@
 use crate::{
     objects::{HittableList, Sphere},
     ray::{Hittable, Ray},
-    scene::SceneSettings, utils::random_on_unit_sphere,
+    scene::SceneSettings,
+    utils::random_on_unit_sphere,
 };
-use cgmath::{InnerSpace, Vector3};
+use cgmath::Vector3;
 use palette::{LinSrgba, Pixel};
 use rand::{
     distributions::Uniform,
@@ -11,7 +12,6 @@ use rand::{
     Rng,
 };
 use std::time::{Duration, Instant};
-use crate::utils::random_in_unit_sphere;
 
 pub struct RayTracingDemo {
     width: u32,
@@ -61,7 +61,7 @@ impl RayTracingDemo {
         if let Some(hit) = self.objects.hit(ray, 0.01, f32::INFINITY) {
             // Diffuse material
             let target = hit.point + hit.normal + random_on_unit_sphere(&mut self.rng);
-            return self.ray_color(Ray::new(hit.point, target - hit.point, ray.depth-1)) * 0.5;
+            return self.ray_color(Ray::new(hit.point, target - hit.point, ray.depth - 1)) * 0.5;
 
             // Normal emissive
             // let normal = 0.5 * (hit.normal.normalize() + Vector3::new(1.0, 1.0, 1.0));
@@ -98,7 +98,7 @@ impl RayTracingDemo {
 
                 // Apply gamma correction
                 color.red = (color.red / (self.scene.samples_per_pixel as f32)).sqrt();
-                color.blue = (color.blue/ (self.scene.samples_per_pixel as f32)).sqrt();
+                color.blue = (color.blue / (self.scene.samples_per_pixel as f32)).sqrt();
                 color.green = (color.green / (self.scene.samples_per_pixel as f32)).sqrt();
 
                 // Gamma correction

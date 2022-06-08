@@ -5,6 +5,27 @@ edition = "2021"
 
 [profile.release]
 debug = true
+# lto = "fat"
+# codegen-units = 1
+
+[profile.bench]
+debug = true
+
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "bench"
+harness = false
+
+[lib]
+name = "ray_tracing_rust"
+path = "lib/lib.rs"
+
+[[bin]]
+name = "ray_tracing_rust"
+path = "src/main.rs"
+
 
 [dependencies]
 egui = "0.17"

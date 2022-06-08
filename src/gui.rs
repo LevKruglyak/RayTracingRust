@@ -1,7 +1,7 @@
-use crate::render::RayTracingDemo;
 use egui::{ClippedMesh, Context, TexturesDelta};
 use egui_wgpu_backend::{BackendError, RenderPass, ScreenDescriptor};
 use pixels::{wgpu, PixelsContext};
+use ray_tracing_rust::render::RayTracingDemo;
 use std::{cell::RefCell, rc::Rc};
 use winit::window::Window;
 
@@ -149,10 +149,7 @@ impl Gui {
                     1..=1000,
                 ));
                 ui.label("Max ray depth:");
-                ui.add(egui::Slider::new(
-                    &mut app.scene.max_ray_depth,
-                    1..=255,
-                ));
+                ui.add(egui::Slider::new(&mut app.scene.max_ray_depth, 1..=255));
 
                 ui.separator();
                 if ui.button("Render Image").clicked() {

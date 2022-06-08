@@ -12,7 +12,12 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(viewport_width: f32, viewport_height: f32, focal_length: f32, max_ray_depth: u8) -> Self {
+    pub fn new(
+        viewport_width: f32,
+        viewport_height: f32,
+        focal_length: f32,
+        max_ray_depth: u8,
+    ) -> Self {
         let origin = Vector3::new(0.0, 0.0, 0.0);
         let horizontal = Vector3::new(viewport_width, 0.0, 0.0);
         let vertical = Vector3::new(0.0, viewport_height, 0.0);
@@ -63,7 +68,12 @@ impl SceneSettings {
         let viewport_height = self.viewport_ratio * self.height / self.width;
 
         // Camera
-        let camera = Camera::new(viewport_width, viewport_height, self.focal_length, self.max_ray_depth);
+        let camera = Camera::new(
+            viewport_width,
+            viewport_height,
+            self.focal_length,
+            self.max_ray_depth,
+        );
 
         Scene {
             viewport_width,
