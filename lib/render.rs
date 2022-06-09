@@ -1,24 +1,25 @@
 use crate::{
+    material::{Lambertian, Metal, Emission},
     objects::{HittableList, Sphere},
     ray::{Hittable, Ray},
     scene::SceneSettings,
-    utils::random_on_unit_sphere,
 };
 use cgmath::Vector3;
 use palette::{LinSrgba, Pixel};
 use rand::{
     distributions::Uniform,
-    prelude::{Distribution, ThreadRng},
-    Rng,
+    prelude::Distribution,
 };
-use std::time::{Duration, Instant};
+use std::{
+    rc::Rc,
+    time::{Duration, Instant},
+};
 
 pub struct RayTracingDemo {
     width: u32,
     height: u32,
     pixels: Vec<LinSrgba>,
-    objects: HittableList,
-    rng: ThreadRng,
+    pub objects: HittableList,
     pub scene: SceneSettings,
     pub last_time: Duration,
     pub needs_redraw: bool,
@@ -38,7 +39,6 @@ impl RayTracingDemo {
                 samples_per_pixel: 5,
                 max_ray_depth: 20,
             },
-            rng: rand::thread_rng(),
             objects: HittableList::new(),
             last_time: Duration::new(0, 0),
             needs_redraw: true,
@@ -46,31 +46,64 @@ impl RayTracingDemo {
     }
 
     pub fn setup(&mut self) {
-        self.objects
-            .add(Box::new(Sphere::new(Vector3::new(0.0, -0.2, -1.0), 0.5)));
-        self.objects
-            .add(Box::new(Sphere::new(Vector3::new(0.0, 500.3, -1.0), 500.0)));
+        let mat_ground = Rc::new(Lambertian::new(LinSrgba::new(0.8, 0.8, 0.4, 1.0)));
+        let mat_center = Rc::new(Lambertian::new(LinSrgba::new(0.8, 0.1, 0.1, 1.0)));
+        let mat_left = Rc::new(Metal::new(LinSrgba::new(1.0, 1.0, 1.0, 1.0), 0.03));
+        let mat_right = Rc::new(Metal::new(LinSrgba::new(0.8, 0.6, 0.2, 1.0), 0.08));
+        let mat_glow = Rc::new(Emission::new(LinSrgba::new(1.0, 1.0, 1.0, 1.0), 2.0));
+
+        self.objects.add(Box::new(Sphere::new(
+            Vector3::new(10.0, -15.8, -1.0),
+            10.0,
+            mat_glow
+        )));
+        self.objects.add(Box::new(Sphere::new(
+            Vector3::new(1.0, 0.0, -1.0),
+            0.5,
+            mat_left,
+        )));
+        self.objects.add(Box::new(Sphere::new(
+            Vector3::new(-1.0, 0.0, -1.0),
+            0.5,
+            mat_right,
+        )));
+        self.objects.add(Box::new(Sphere::new(
+            Vector3::new(0.0, 0.2, -1.0),
+            0.3,
+            mat_center,
+        )));
+        self.objects.add(Box::new(Sphere::new(
+            Vector3::new(0.0, 100.5, -1.0),
+            100.0,
+            mat_ground,
+        )));
     }
 
-    pub fn ray_color(&mut self, ray: Ray) -> LinSrgba {
+    pub fn ray_color(&mut self, ray: &Ray) -> LinSrgba {
         // Base condition
         if ray.depth <= 0 {
             return LinSrgba::new(0.0, 0.0, 0.0, 1.0);
         }
 
         if let Some(hit) = self.objects.hit(ray, 0.01, f32::INFINITY) {
-            // Diffuse material
-            let target = hit.point + hit.normal + random_on_unit_sphere(&mut self.rng);
-            return self.ray_color(Ray::new(hit.point, target - hit.point, ray.depth - 1)) * 0.5;
-
             // Normal emissive
             // let normal = 0.5 * (hit.normal.normalize() + Vector3::new(1.0, 1.0, 1.0));
             // LinSrgba::new(normal.x, normal.y, normal.z, 1.0)
+
+            let (attenuation, scattered) = hit.material.scatter(&ray, &hit);
+
+            if let Some(scattered) = scattered {
+                attenuation * self.ray_color(&scattered)
+            } else {
+                attenuation
+            }
         } else {
-            ray.vertical_grad(
-                LinSrgba::new(0.5, 0.7, 1.0, 1.0),
-                LinSrgba::new(1.0, 1.0, 1.0, 1.0),
-            )
+            // ray.vertical_grad(
+            //     LinSrgba::new(0.01, 0.0, 0.0, 1.0),
+            //     LinSrgba::new(0.0, 0.0, 0.0, 1.0),
+            // )
+
+            LinSrgba::new(0.0, 0.0, 0.0, 1.0)
         }
     }
 
@@ -79,6 +112,7 @@ impl RayTracingDemo {
 
         // Build up the scene
         let scene = self.scene.build_scene();
+        let mut rng = rand::thread_rng();
         let range = Uniform::from(0.0..1.0);
 
         for y in 0..self.height {
@@ -88,12 +122,12 @@ impl RayTracingDemo {
                 // Antialiasing / sampling
                 for _ in 0..self.scene.samples_per_pixel {
                     // UV coordinates
-                    let u = (x as f32 + range.sample(&mut self.rng)) / (self.width - 1) as f32;
-                    let v = (y as f32 + range.sample(&mut self.rng)) / (self.height - 1) as f32;
+                    let u = (x as f32 + range.sample(&mut rng)) / (self.width - 1) as f32;
+                    let v = (y as f32 + range.sample(&mut rng)) / (self.height - 1) as f32;
 
                     // Cast a ray
                     let ray = scene.camera.get_ray(u, v);
-                    color += self.ray_color(ray);
+                    color += self.ray_color(&ray);
                 }
 
                 // Apply gamma correction

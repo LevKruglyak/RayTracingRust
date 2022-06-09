@@ -1,7 +1,8 @@
 use cgmath::{InnerSpace, Vector3};
-use rand::{prelude::ThreadRng, Rng};
+use rand::Rng;
 
-pub fn random_vector(rng: &mut ThreadRng, min: f32, max: f32) -> Vector3<f32> {
+pub fn random_vector(min: f32, max: f32) -> Vector3<f32> {
+    let mut rng = rand::thread_rng();
     Vector3::new(
         rng.gen_range(min..max),
         rng.gen_range(min..max),
@@ -9,15 +10,25 @@ pub fn random_vector(rng: &mut ThreadRng, min: f32, max: f32) -> Vector3<f32> {
     )
 }
 
-pub fn random_in_unit_sphere(rng: &mut ThreadRng) -> Vector3<f32> {
+pub fn random_in_unit_sphere() -> Vector3<f32> {
     loop {
-        let rvec = random_vector(rng, -1.0, 1.0);
+        let rvec = random_vector(-1.0, 1.0);
         if rvec.magnitude() < 1.0 {
             return rvec;
         }
     }
 }
 
-pub fn random_on_unit_sphere(rng: &mut ThreadRng) -> Vector3<f32> {
-    random_in_unit_sphere(rng).normalize()
+#[inline]
+pub fn random_on_unit_sphere() -> Vector3<f32> {
+    random_in_unit_sphere().normalize()
+}
+
+pub fn near_zero(vector: Vector3<f32>) -> bool {
+    const EPS: f32 = 1.0e-8;
+    vector.x.abs() < EPS && vector.y.abs() < EPS && vector.z.abs() < EPS
+}
+
+pub fn reflect(a: Vector3<f32>, n: Vector3<f32>) -> Vector3<f32> {
+    a - 2.0 * a.dot(n) * n
 }

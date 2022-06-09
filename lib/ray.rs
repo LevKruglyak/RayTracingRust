@@ -1,7 +1,11 @@
 use cgmath::{InnerSpace, Vector3};
-use std::ops::{Add, Mul};
+use std::{
+    ops::{Add, Mul},
+    rc::Rc,
+};
 
-#[derive(Debug, Clone, Copy)]
+use crate::material::Material;
+
 pub struct Ray {
     pub origin: Vector3<f32>,
     pub direction: Vector3<f32>,
@@ -27,16 +31,23 @@ impl Ray {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone)]
 pub struct HitRecord {
     pub point: Vector3<f32>,
     pub normal: Vector3<f32>,
     pub t: f32,
     pub front_face: bool,
+    pub material: Rc<dyn Material>,
 }
 
 impl HitRecord {
-    pub fn new(point: Vector3<f32>, outward_normal: Vector3<f32>, t: f32, ray: Ray) -> Self {
+    pub fn new(
+        point: Vector3<f32>,
+        outward_normal: Vector3<f32>,
+        t: f32,
+        ray: &Ray,
+        material: Rc<dyn Material>,
+    ) -> Self {
         let front_face = ray.direction.dot(outward_normal) < 0.0;
         let normal = if front_face {
             outward_normal
@@ -49,10 +60,11 @@ impl HitRecord {
             normal,
             t,
             front_face,
+            material,
         }
     }
 }
 
 pub trait Hittable {
-    fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
 }

@@ -1,6 +1,11 @@
+use std::rc::Rc;
+
 use cgmath::{InnerSpace, Vector3};
 
-use crate::ray::{HitRecord, Hittable};
+use crate::{
+    material::Material,
+    ray::{HitRecord, Hittable, Ray},
+};
 
 pub struct HittableList {
     objects: Vec<Box<dyn Hittable>>,
@@ -19,12 +24,12 @@ impl HittableList {
 }
 
 impl Hittable for HittableList {
-    fn hit(&self, ray: crate::ray::Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let mut result = None;
         let mut closest_so_far = t_max;
 
         for object in &self.objects {
-            if let Some(hit) = object.hit(ray, t_min, closest_so_far) {
+            if let Some(hit) = object.hit(&ray, t_min, closest_so_far) {
                 closest_so_far = hit.t;
                 result = Some(hit);
             }
@@ -34,20 +39,24 @@ impl Hittable for HittableList {
     }
 }
 
-#[derive(Debug)]
 pub struct Sphere {
     center: Vector3<f32>,
     radius: f32,
+    material: Rc<dyn Material>,
 }
 
 impl Sphere {
-    pub fn new(center: Vector3<f32>, radius: f32) -> Self {
-        Self { center, radius }
+    pub fn new(center: Vector3<f32>, radius: f32, material: Rc<dyn Material>) -> Self {
+        Self {
+            center,
+            radius,
+            material,
+        }
     }
 }
 
 impl Hittable for Sphere {
-    fn hit(&self, ray: crate::ray::Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let oc = ray.origin - self.center;
 
         let a = ray.direction.magnitude2();
@@ -73,6 +82,12 @@ impl Hittable for Sphere {
         let point = ray.at(root);
         let normal = (point - self.center) / self.radius;
 
-        Some(HitRecord::new(point, normal, root, ray))
+        Some(HitRecord::new(
+            point,
+            normal,
+            root,
+            ray,
+            self.material.clone(),
+        ))
     }
 }
