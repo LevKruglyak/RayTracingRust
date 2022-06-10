@@ -1,9 +1,10 @@
 use cgmath::InnerSpace;
 use palette::LinSrgba;
+use rand::Rng;
 
 use crate::{
     ray::{HitRecord, Ray},
-    utils::{near_zero, random_on_unit_sphere, reflect},
+    utils::{near_zero, random_on_unit_sphere, reflect, refract},
 };
 
 pub trait Material {
@@ -41,7 +42,7 @@ pub struct Metal {
 
 impl Metal {
     pub fn new(albedo: LinSrgba, fuzz: f32) -> Self {
-        Self { albedo, fuzz, }
+        Self { albedo, fuzz }
     }
 }
 
@@ -64,17 +65,64 @@ impl Material for Metal {
 
 pub struct Emission {
     color: LinSrgba,
-    strength: f32,
 }
 
 impl Emission {
     pub fn new(color: LinSrgba, strength: f32) -> Self {
-        Self { color, strength, }
+        Self {
+            color: color * strength,
+        }
     }
 }
 
 impl Material for Emission {
+    fn scatter(&self, _ray: &Ray, _hit: &HitRecord) -> (LinSrgba, Option<Ray>) {
+        (self.color, None)
+    }
+}
+
+pub struct Dielectric {
+    ir: f32,
+}
+
+impl Dielectric {
+    pub fn new(ir: f32) -> Self {
+        Self { ir }
+    }
+
+    fn reflectance(cosine: f32, idx: f32) -> f32 {
+        // Schlick's approximation for reflectance
+        let mut r0 = (1.0 - idx) / (1.0 + idx);
+        r0 = r0 * r0;
+        r0 + (1.0 - r0) * f32::powi(1.0 - cosine, 5)
+    }
+}
+
+impl Material for Dielectric {
     fn scatter(&self, ray: &Ray, hit: &HitRecord) -> (LinSrgba, Option<Ray>) {
-        (self.color * self.strength, None)
+        let refraction_ratio = if hit.front_face {
+            1.0 / self.ir
+        } else {
+            self.ir
+        };
+
+        let unit_direction = ray.direction.normalize();
+        let cos_theta = f32::min(hit.normal.dot(-unit_direction), 1.0);
+        let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
+
+        let cannot_refract: bool = (refraction_ratio * sin_theta) > 1.0;
+        let direction = if cannot_refract
+            || Dielectric::reflectance(cos_theta, refraction_ratio)
+                > rand::thread_rng().gen_range(0.0..1.0)
+        {
+            reflect(unit_direction, hit.normal)
+        } else {
+            refract(unit_direction, hit.normal, refraction_ratio)
+        };
+
+        (
+            LinSrgba::new(1.0, 1.0, 1.0, 1.0),
+            Some(Ray::new(hit.point, direction, ray.depth - 1)),
+        )
     }
 }

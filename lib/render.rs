@@ -1,15 +1,13 @@
 use crate::{
-    material::{Lambertian, Metal, Emission},
+    material::{Dielectric, Emission, Lambertian, Material, Metal},
     objects::{HittableList, Sphere},
     ray::{Hittable, Ray},
     scene::SceneSettings,
 };
 use cgmath::Vector3;
 use palette::{LinSrgba, Pixel};
-use rand::{
-    distributions::Uniform,
-    prelude::Distribution,
-};
+use rand::Rng;
+use rand::{distributions::Uniform, prelude::Distribution};
 use std::{
     rc::Rc,
     time::{Duration, Instant},
@@ -37,7 +35,7 @@ impl RayTracingDemo {
                 viewport_ratio: 2.0,
                 focal_length: 1.0,
                 samples_per_pixel: 5,
-                max_ray_depth: 20,
+                max_ray_depth: 6,
             },
             objects: HittableList::new(),
             last_time: Duration::new(0, 0),
@@ -46,37 +44,56 @@ impl RayTracingDemo {
     }
 
     pub fn setup(&mut self) {
-        let mat_ground = Rc::new(Lambertian::new(LinSrgba::new(0.8, 0.8, 0.4, 1.0)));
-        let mat_center = Rc::new(Lambertian::new(LinSrgba::new(0.8, 0.1, 0.1, 1.0)));
-        let mat_left = Rc::new(Metal::new(LinSrgba::new(1.0, 1.0, 1.0, 1.0), 0.03));
-        let mat_right = Rc::new(Metal::new(LinSrgba::new(0.8, 0.6, 0.2, 1.0), 0.08));
-        let mat_glow = Rc::new(Emission::new(LinSrgba::new(1.0, 1.0, 1.0, 1.0), 2.0));
-
+        let mat_ground = Rc::new(Lambertian::new(LinSrgba::new(0.4, 0.4, 0.4, 1.0)));
         self.objects.add(Box::new(Sphere::new(
-            Vector3::new(10.0, -15.8, -1.0),
-            10.0,
-            mat_glow
-        )));
-        self.objects.add(Box::new(Sphere::new(
-            Vector3::new(1.0, 0.0, -1.0),
-            0.5,
-            mat_left,
-        )));
-        self.objects.add(Box::new(Sphere::new(
-            Vector3::new(-1.0, 0.0, -1.0),
-            0.5,
-            mat_right,
-        )));
-        self.objects.add(Box::new(Sphere::new(
-            Vector3::new(0.0, 0.2, -1.0),
-            0.3,
-            mat_center,
-        )));
-        self.objects.add(Box::new(Sphere::new(
-            Vector3::new(0.0, 100.5, -1.0),
-            100.0,
+            Vector3::new(0.0, 1000.5, -1.0),
+            1000.0,
             mat_ground,
         )));
+
+        self.objects.add(Box::new(Sphere::new(
+            Vector3::new(0.0, 0.3, -1.0),
+            0.2,
+            Rc::new(Dielectric::new(1.5)),
+        )));
+
+        self.objects.add(Box::new(Sphere::new(
+            Vector3::new(1.4, -0.5, -1.0),
+            0.3,
+            Rc::new(Emission::new(LinSrgba::new(0.8, 0.2, 0.2, 1.0), 100.0)),
+        )));
+
+        // let mut rng = rand::thread_rng();
+        // let mat_ground = Rc::new(Lambertian::new(LinSrgba::new(0.2, 0.2, 0.2, 1.0)));
+
+        // for x in -5..5 {
+        //     for y in -5..5 {
+        //         let color = LinSrgba::new(rng.gen_range(0.1..1.0), rng.gen_range(0.1..1.0), rng.gen_range(0.1..1.0), 1.0);
+        //         let material: Rc<dyn Material> = if rng.gen_bool(0.3) {
+        //             Rc::new(Lambertian::new(color))
+        //         } else if rng.gen_bool(0.5) {
+        //             Rc::new(Metal::new(color, rng.gen_range(0.0..0.2)))
+        //         } else if rng.gen_bool(0.6) {
+        //             Rc::new(Dielectric::new(1.5))
+        //         } else {
+        //             Rc::new(Emission::new(color, 10.0))
+        //         };
+
+        //         let radius = rng.gen_range(0.01..0.1);
+
+        //         self.objects.add(Box::new(Sphere::new(
+        //             Vector3::new(0.2 * (x as f32), 0.5 - radius, -1.0 - 0.2 * (y as f32)),
+        //             radius,
+        //             material,
+        //         )));
+        //     }
+        // }
+
+        // self.objects.add(Box::new(Sphere::new(
+        //     Vector3::new(0.0, 100.5, -1.0),
+        //     100.0,
+        //     mat_ground,
+        // )));
     }
 
     pub fn ray_color(&mut self, ray: &Ray) -> LinSrgba {
@@ -103,7 +120,7 @@ impl RayTracingDemo {
             //     LinSrgba::new(0.0, 0.0, 0.0, 1.0),
             // )
 
-            LinSrgba::new(0.0, 0.0, 0.0, 1.0)
+            LinSrgba::new(0.2, 0.2, 0.2, 1.0)
         }
     }
 
@@ -145,6 +162,7 @@ impl RayTracingDemo {
     }
 
     pub fn draw(&mut self, frame: &mut [u8]) {
+        println!("draw");
         self.needs_redraw = false;
 
         assert_eq!(self.pixels.len() * 4, frame.len());

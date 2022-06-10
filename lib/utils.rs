@@ -32,3 +32,10 @@ pub fn near_zero(vector: Vector3<f32>) -> bool {
 pub fn reflect(a: Vector3<f32>, n: Vector3<f32>) -> Vector3<f32> {
     a - 2.0 * a.dot(n) * n
 }
+
+pub fn refract(uv: Vector3<f32>, n: Vector3<f32>, etai_over_etat: f32) -> Vector3<f32> {
+    let cos_theta = f32::min(n.dot(-uv), 1.0);
+    let out_perp = etai_over_etat * (uv + cos_theta * n);
+    let out_parallel = -(f32::abs(1.0 - out_perp.magnitude2())).sqrt() * n;
+    out_perp + out_parallel
+}

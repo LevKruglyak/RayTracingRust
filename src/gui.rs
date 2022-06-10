@@ -1,4 +1,4 @@
-use egui::{ClippedMesh, Context, TexturesDelta};
+use egui::{ClippedMesh, Context, TexturesDelta, panel::Side};
 use egui_wgpu_backend::{BackendError, RenderPass, ScreenDescriptor};
 use pixels::{wgpu, PixelsContext};
 use ray_tracing_rust::render::RayTracingDemo;
@@ -119,8 +119,6 @@ impl Framework {
 
 /// Application state
 struct Gui {
-    /// Only show the egui window when true.
-    window_open: bool,
     app: Rc<RefCell<RayTracingDemo>>,
 }
 
@@ -128,19 +126,15 @@ impl Gui {
     /// Create a `Gui`.
     fn new(app: Rc<RefCell<RayTracingDemo>>) -> Self {
         Self {
-            window_open: true,
             app,
         }
     }
 
     /// Create the UI using egui.
     fn ui(&mut self, ctx: &Context) {
-        egui::Window::new("Render Settings")
-            .open(&mut self.window_open)
+        egui::SidePanel::new(Side::Left, "Render Settings")
             .show(ctx, |ui| {
                 let mut app = self.app.borrow_mut();
-                ui.label("Viewport ratio:");
-                ui.add(egui::Slider::new(&mut app.scene.viewport_ratio, 0.1..=10.0));
                 ui.label("Focal length:");
                 ui.add(egui::Slider::new(&mut app.scene.focal_length, 0.01..=2.0));
                 ui.label("Samples per pixel:");

@@ -3,7 +3,11 @@ use std::rc::Rc;
 use cgmath::Vector3;
 use criterion::{criterion_group, criterion_main, Criterion};
 use palette::LinSrgba;
-use ray_tracing_rust::{render::RayTracingDemo, material::{Lambertian, Emission, Metal}, objects::Sphere};
+use ray_tracing_rust::{
+    material::{Emission, Lambertian, Metal},
+    objects::Sphere,
+    render::RayTracingDemo,
+};
 
 fn criterion_benchmark(c: &mut Criterion) {
     let mut app = RayTracingDemo::new(100, 100);
@@ -16,7 +20,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     app.objects.add(Box::new(Sphere::new(
         Vector3::new(10.0, -15.8, -1.0),
         10.0,
-        mat_glow
+        mat_glow,
     )));
     app.objects.add(Box::new(Sphere::new(
         Vector3::new(1.0, 0.0, -1.0),
