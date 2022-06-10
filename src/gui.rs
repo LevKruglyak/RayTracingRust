@@ -132,7 +132,8 @@ impl Gui {
 
     /// Create the UI using egui.
     fn ui(&mut self, ctx: &Context) {
-        egui::SidePanel::new(Side::Left, "Render Settings")
+        egui::Window::new("Render Settings")
+            .open(&mut true)
             .show(ctx, |ui| {
                 let mut app = self.app.borrow_mut();
                 ui.label("Focal length:");
