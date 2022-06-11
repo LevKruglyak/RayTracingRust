@@ -44,56 +44,43 @@ impl RayTracingDemo {
     }
 
     pub fn setup(&mut self) {
-        let mat_ground = Rc::new(Lambertian::new(LinSrgba::new(0.4, 0.4, 0.4, 1.0)));
+        let mut rng = rand::thread_rng();
+        let mat_ground = Rc::new(Lambertian::new(LinSrgba::new(0.2, 0.2, 0.2, 1.0)));
+
+        for x in -5..5 {
+            for y in -5..5 {
+                let color = LinSrgba::new(rng.gen_range(0.1..1.0), rng.gen_range(0.1..1.0), rng.gen_range(0.1..1.0), 1.0);
+                let material: Rc<dyn Material> = if rng.gen_bool(0.3) {
+                    Rc::new(Lambertian::new(color))
+                } else if rng.gen_bool(0.5) {
+                    Rc::new(Metal::new(color, rng.gen_range(0.0..0.2)))
+                } else if rng.gen_bool(0.6) {
+                    Rc::new(Dielectric::new(1.5))
+                } else {
+                    Rc::new(Emission::new(color, 10.0))
+                };
+
+                let radius = rng.gen_range(0.01..0.1);
+
+                self.objects.add(Box::new(Sphere::new(
+                    Vector3::new(0.2 * (x as f32), 0.5 - radius, -1.0 - 0.2 * (y as f32)),
+                    radius,
+                    material,
+                )));
+            }
+        }
+
         self.objects.add(Box::new(Sphere::new(
-            Vector3::new(0.0, 1000.5, -1.0),
-            1000.0,
+            Vector3::new(0.0, 0.5 - 1.0, -2.5),
+            1.0,
+            Rc::new(Metal::new(LinSrgba::new(0.7, 0.7, 0.7, 1.0), 0.02)),
+        )));
+
+        self.objects.add(Box::new(Sphere::new(
+            Vector3::new(0.0, 100.5, -1.0),
+            100.0,
             mat_ground,
         )));
-
-        self.objects.add(Box::new(Sphere::new(
-            Vector3::new(0.0, 0.3, -1.0),
-            0.2,
-            Rc::new(Dielectric::new(1.5)),
-        )));
-
-        self.objects.add(Box::new(Sphere::new(
-            Vector3::new(1.4, -0.5, -1.0),
-            0.3,
-            Rc::new(Emission::new(LinSrgba::new(0.8, 0.2, 0.2, 1.0), 100.0)),
-        )));
-
-        // let mut rng = rand::thread_rng();
-        // let mat_ground = Rc::new(Lambertian::new(LinSrgba::new(0.2, 0.2, 0.2, 1.0)));
-
-        // for x in -5..5 {
-        //     for y in -5..5 {
-        //         let color = LinSrgba::new(rng.gen_range(0.1..1.0), rng.gen_range(0.1..1.0), rng.gen_range(0.1..1.0), 1.0);
-        //         let material: Rc<dyn Material> = if rng.gen_bool(0.3) {
-        //             Rc::new(Lambertian::new(color))
-        //         } else if rng.gen_bool(0.5) {
-        //             Rc::new(Metal::new(color, rng.gen_range(0.0..0.2)))
-        //         } else if rng.gen_bool(0.6) {
-        //             Rc::new(Dielectric::new(1.5))
-        //         } else {
-        //             Rc::new(Emission::new(color, 10.0))
-        //         };
-
-        //         let radius = rng.gen_range(0.01..0.1);
-
-        //         self.objects.add(Box::new(Sphere::new(
-        //             Vector3::new(0.2 * (x as f32), 0.5 - radius, -1.0 - 0.2 * (y as f32)),
-        //             radius,
-        //             material,
-        //         )));
-        //     }
-        // }
-
-        // self.objects.add(Box::new(Sphere::new(
-        //     Vector3::new(0.0, 100.5, -1.0),
-        //     100.0,
-        //     mat_ground,
-        // )));
     }
 
     pub fn ray_color(&mut self, ray: &Ray) -> LinSrgba {
@@ -115,12 +102,10 @@ impl RayTracingDemo {
                 attenuation
             }
         } else {
-            // ray.vertical_grad(
-            //     LinSrgba::new(0.01, 0.0, 0.0, 1.0),
-            //     LinSrgba::new(0.0, 0.0, 0.0, 1.0),
-            // )
-
-            LinSrgba::new(0.2, 0.2, 0.2, 1.0)
+            ray.vertical_grad(
+                LinSrgba::new(0.5, 0.7, 1.0, 1.0),
+                LinSrgba::new(1.0, 1.0, 1.0, 1.0),
+            )
         }
     }
 

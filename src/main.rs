@@ -15,11 +15,11 @@ use ray_tracing_rust::render::RayTracingDemo;
 
 mod gui;
 
-const RENDER_WIDTH: u32 = 500;
-const RENDER_HEIGHT: u32 = 500;
+const RENDER_WIDTH: u32 = 1200;
+const RENDER_HEIGHT: u32 = 1000;
 
-const WINDOW_WIDTH: u32 = 2 * RENDER_WIDTH;
-const WINDOW_HEIGHT: u32 = 2 * RENDER_HEIGHT;
+const WINDOW_WIDTH: u32 = RENDER_WIDTH;
+const WINDOW_HEIGHT: u32 = RENDER_HEIGHT;
 
 fn main() -> Result<(), Error> {
     env_logger::init();
