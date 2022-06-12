@@ -142,6 +142,7 @@ impl Gui {
                 ui.add(egui::Slider::new(&mut app.scene.samples_per_pixel, 1..=200));
                 ui.label("Max ray depth:");
                 ui.add(egui::Slider::new(&mut app.scene.max_ray_depth, 1..=50));
+                ui.checkbox(&mut app.render_normals, "Render normals");
 
                 ui.separator();
                 if ui.button("Render Image").clicked() {

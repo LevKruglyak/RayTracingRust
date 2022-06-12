@@ -4,7 +4,7 @@ use crate::{
     ray::{Hittable, Ray},
     scene::SceneSettings,
 };
-use cgmath::Vector3;
+use cgmath::{Vector3, InnerSpace};
 use palette::{LinSrgba, Pixel};
 use rand::Rng;
 use rand::{distributions::Uniform, prelude::Distribution};
@@ -21,6 +21,7 @@ pub struct RayTracingDemo {
     pub scene: SceneSettings,
     pub last_time: Duration,
     pub needs_redraw: bool,
+    pub render_normals: bool,
 }
 
 impl RayTracingDemo {
@@ -40,6 +41,7 @@ impl RayTracingDemo {
             objects: HittableList::new(),
             last_time: Duration::new(0, 0),
             needs_redraw: true,
+            render_normals: false,
         }
     }
 
@@ -90,9 +92,11 @@ impl RayTracingDemo {
         }
 
         if let Some(hit) = self.objects.hit(ray, 0.01, f32::INFINITY) {
-            // Normal emissive
-            // let normal = 0.5 * (hit.normal.normalize() + Vector3::new(1.0, 1.0, 1.0));
-            // LinSrgba::new(normal.x, normal.y, normal.z, 1.0)
+            if self.render_normals {
+                // Normal emissive
+                let normal = 0.5 * (hit.normal.normalize() + Vector3::new(1.0, 1.0, 1.0));
+                return LinSrgba::new(normal.x, normal.y, normal.z, 1.0);
+            }
 
             let (attenuation, scattered) = hit.material.scatter(&ray, &hit);
 
@@ -117,12 +121,18 @@ impl RayTracingDemo {
         let mut rng = rand::thread_rng();
         let range = Uniform::from(0.0..1.0);
 
+        let samples = if self.render_normals {
+            2 // for Antialiasing purposes
+        } else {
+            self.scene.samples_per_pixel
+        };
+
         for y in 0..self.height {
             for x in 0..self.width {
                 let mut color = LinSrgba::new(0.0, 0.0, 0.0, 1.0);
 
                 // Antialiasing / sampling
-                for _ in 0..self.scene.samples_per_pixel {
+                for _ in 0..samples {
                     // UV coordinates
                     let u = (x as f32 + range.sample(&mut rng)) / (self.width - 1) as f32;
                     let v = (y as f32 + range.sample(&mut rng)) / (self.height - 1) as f32;
@@ -133,9 +143,9 @@ impl RayTracingDemo {
                 }
 
                 // Apply gamma correction
-                color.red = (color.red / (self.scene.samples_per_pixel as f32)).sqrt();
-                color.blue = (color.blue / (self.scene.samples_per_pixel as f32)).sqrt();
-                color.green = (color.green / (self.scene.samples_per_pixel as f32)).sqrt();
+                color.red = (color.red / (samples as f32)).sqrt();
+                color.blue = (color.blue / (samples as f32)).sqrt();
+                color.green = (color.green / (samples as f32)).sqrt();
 
                 // Gamma correction
                 self.pixels[(x + y * self.width) as usize] = color;
