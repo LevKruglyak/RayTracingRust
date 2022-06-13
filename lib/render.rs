@@ -1,4 +1,5 @@
 use crate::color::Color;
+use crate::sky::{Background, GradientBackground};
 use crate::{
     material::{Dielectric, Emission, Lambertian, Material, Metal},
     objects::{HittableList, Sphere},
@@ -17,6 +18,7 @@ pub struct RayTracingDemo {
     width: u32,
     height: u32,
     pixels: Vec<Color>,
+    pub background: Box<dyn Background>,
     pub objects: HittableList,
     pub scene: SceneSettings,
     pub last_time: Duration,
@@ -38,6 +40,7 @@ impl RayTracingDemo {
                 samples_per_pixel: 5,
                 max_ray_depth: 6,
             },
+            background: Box::new(GradientBackground::new(Color::new(0.5, 0.7, 1.0), Color::new(1.0, 1.0, 1.0))),
             objects: HittableList::new(),
             last_time: Duration::new(0, 0),
             needs_redraw: true,
@@ -110,7 +113,7 @@ impl RayTracingDemo {
                 attenuation
             }
         } else {
-            ray.vertical_grad(Color::new(0.5, 0.7, 1.0), Color::new(1.0, 1.0, 1.0))
+            self.background.sample(ray)
         }
     }
 
