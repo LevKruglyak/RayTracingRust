@@ -1,5 +1,5 @@
 use crate::color::Color;
-use crate::sky::{Background, GradientBackground};
+use crate::sky::{Background, GradientBackground, SkyMap};
 use crate::{
     material::{Dielectric, Emission, Lambertian, Material, Metal},
     objects::{HittableList, Sphere},
@@ -40,7 +40,11 @@ impl RayTracingDemo {
                 samples_per_pixel: 5,
                 max_ray_depth: 6,
             },
-            background: Box::new(GradientBackground::new(Color::new(0.5, 0.7, 1.0), Color::new(1.0, 1.0, 1.0))),
+            // background: Box::new(GradientBackground::new(
+            //     Color::new(0.5, 0.7, 1.0),
+            //     Color::new(1.0, 1.0, 1.0),
+            // )),
+            background: Box::new(SkyMap::new("assets/indoor.exr")),
             objects: HittableList::new(),
             last_time: Duration::new(0, 0),
             needs_redraw: true,
@@ -52,37 +56,37 @@ impl RayTracingDemo {
         let mut rng = rand::thread_rng();
         let mat_ground = Rc::new(Lambertian::new(Color::new(0.2, 0.2, 0.2)));
 
-        for x in -5..5 {
-            for y in -5..5 {
-                let color = Color::new(
-                    rng.gen_range(0.1..1.0),
-                    rng.gen_range(0.1..1.0),
-                    rng.gen_range(0.1..1.0),
-                );
-                let material: Rc<dyn Material> = if rng.gen_bool(0.3) {
-                    Rc::new(Lambertian::new(color))
-                } else if rng.gen_bool(0.5) {
-                    Rc::new(Metal::new(color, rng.gen_range(0.0..0.2)))
-                } else if rng.gen_bool(0.6) {
-                    Rc::new(Dielectric::new(1.5))
-                } else {
-                    Rc::new(Emission::new(color, 10.0))
-                };
+        // for x in -5..5 {
+        //     for y in -5..5 {
+        //         let color = Color::new(
+        //             rng.gen_range(0.1..1.0),
+        //             rng.gen_range(0.1..1.0),
+        //             rng.gen_range(0.1..1.0),
+        //         );
+        //         let material: Rc<dyn Material> = if rng.gen_bool(0.3) {
+        //             Rc::new(Lambertian::new(color))
+        //         } else if rng.gen_bool(0.5) {
+        //             Rc::new(Metal::new(color, rng.gen_range(0.0..0.2)))
+        //         } else if rng.gen_bool(0.6) {
+        //             Rc::new(Dielectric::new(1.5))
+        //         } else {
+        //             Rc::new(Emission::new(color, 10.0))
+        //         };
 
-                let radius = rng.gen_range(0.01..0.1);
+        //         let radius = rng.gen_range(0.01..0.1);
 
-                self.objects.add(Box::new(Sphere::new(
-                    Vector3::new(0.2 * (x as f32), 0.5 - radius, -1.0 - 0.2 * (y as f32)),
-                    radius,
-                    material,
-                )));
-            }
-        }
+        //         self.objects.add(Box::new(Sphere::new(
+        //             Vector3::new(0.2 * (x as f32), 0.5 - radius, -1.0 - 0.2 * (y as f32)),
+        //             radius,
+        //             material,
+        //         )));
+        //     }
+        // }
 
         self.objects.add(Box::new(Sphere::new(
-            Vector3::new(0.0, 0.5 - 1.0, -2.5),
-            1.0,
-            Rc::new(Metal::new(Color::new(0.7, 0.7, 0.7), 0.02)),
+            Vector3::new(0.0, 0.5 - 0.4, -2.5),
+            0.4,
+            Rc::new(Dielectric::new(1.5)),
         )));
 
         self.objects.add(Box::new(Sphere::new(
@@ -147,7 +151,11 @@ impl RayTracingDemo {
                 }
 
                 // Apply gamma correction
-                color = Color::from(color.data().map(|channel| { (channel / samples as f32).sqrt() }));
+                color = Color::from(
+                    color
+                        .data()
+                        .map(|channel| (channel / samples as f32).sqrt()),
+                );
 
                 // Gamma correction
                 self.pixels[(x + y * self.width) as usize] = color;
@@ -159,7 +167,6 @@ impl RayTracingDemo {
     }
 
     pub fn draw(&mut self, frame: &mut [u8]) {
-        println!("draw");
         self.needs_redraw = false;
 
         assert_eq!(self.pixels.len() * 4, frame.len());

@@ -1,4 +1,6 @@
-use cgmath::{InnerSpace, Vector3};
+use std::f32::consts::PI;
+
+use cgmath::{InnerSpace, Vector3, Vector2};
 use rand::Rng;
 
 pub fn random_vector(min: f32, max: f32) -> Vector3<f32> {
@@ -38,4 +40,8 @@ pub fn refract(uv: Vector3<f32>, n: Vector3<f32>, etai_over_etat: f32) -> Vector
     let out_perp = etai_over_etat * (uv + cos_theta * n);
     let out_parallel = -(f32::abs(1.0 - out_perp.magnitude2())).sqrt() * n;
     out_perp + out_parallel
+}
+
+pub fn to_spherical_coords(v: Vector3<f32>) -> Vector2<f32> {
+    Vector2 { x: (-v.y).acos(), y: f32::atan2(-v.z, v.x) + PI }
 }

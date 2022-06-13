@@ -1,7 +1,7 @@
 use image::Rgb;
 use std::ops::{Add, Mul};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Color(Rgb<f32>);
 
 impl Color {
@@ -47,6 +47,12 @@ impl Color {
     #[inline]
     pub fn b(&self) -> f32 {
         self.data()[2]
+    }
+}
+
+impl Default for Color {
+    fn default() -> Self {
+        Self::new(0.0, 1.0, 0.0)
     }
 }
 

@@ -3,10 +3,10 @@ use std::rc::Rc;
 use cgmath::Vector3;
 use criterion::{criterion_group, criterion_main, Criterion};
 use ray_tracing_rust::{
+    color::Color,
     material::{Emission, Lambertian, Metal},
     objects::Sphere,
     render::RayTracingDemo,
-    color::Color,
 };
 
 fn criterion_benchmark(c: &mut Criterion) {

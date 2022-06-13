@@ -1,6 +1,6 @@
+use crate::color::Color;
 use cgmath::InnerSpace;
 use rand::Rng;
-use crate::color::Color;
 
 use crate::{
     ray::{HitRecord, Ray},
