@@ -1,6 +1,6 @@
 use cgmath::InnerSpace;
-use palette::LinSrgba;
 use rand::Rng;
+use crate::color::Color;
 
 use crate::{
     ray::{HitRecord, Ray},
@@ -8,21 +8,21 @@ use crate::{
 };
 
 pub trait Material {
-    fn scatter(&self, ray: &Ray, hit: &HitRecord) -> (LinSrgba, Option<Ray>);
+    fn scatter(&self, ray: &Ray, hit: &HitRecord) -> (Color, Option<Ray>);
 }
 
 pub struct Lambertian {
-    albedo: LinSrgba,
+    albedo: Color,
 }
 
 impl Lambertian {
-    pub fn new(albedo: LinSrgba) -> Self {
+    pub fn new(albedo: Color) -> Self {
         Self { albedo }
     }
 }
 
 impl Material for Lambertian {
-    fn scatter(&self, ray: &Ray, hit: &HitRecord) -> (LinSrgba, Option<Ray>) {
+    fn scatter(&self, ray: &Ray, hit: &HitRecord) -> (Color, Option<Ray>) {
         let mut scatter_direction = hit.normal + random_on_unit_sphere();
 
         if near_zero(scatter_direction) {
@@ -36,18 +36,18 @@ impl Material for Lambertian {
 }
 
 pub struct Metal {
-    albedo: LinSrgba,
+    albedo: Color,
     fuzz: f32,
 }
 
 impl Metal {
-    pub fn new(albedo: LinSrgba, fuzz: f32) -> Self {
+    pub fn new(albedo: Color, fuzz: f32) -> Self {
         Self { albedo, fuzz }
     }
 }
 
 impl Material for Metal {
-    fn scatter(&self, ray: &Ray, hit: &HitRecord) -> (LinSrgba, Option<Ray>) {
+    fn scatter(&self, ray: &Ray, hit: &HitRecord) -> (Color, Option<Ray>) {
         let reflected = reflect(ray.direction, hit.normal).normalize();
         let scattered = Ray::new(
             hit.point,
@@ -58,17 +58,17 @@ impl Material for Metal {
         if scattered.direction.dot(hit.normal) > 0.0 {
             (self.albedo, Some(scattered))
         } else {
-            (LinSrgba::new(0.0, 0.0, 0.0, 1.0), None)
+            (Color::new(0.0, 0.0, 0.0), None)
         }
     }
 }
 
 pub struct Emission {
-    color: LinSrgba,
+    color: Color,
 }
 
 impl Emission {
-    pub fn new(color: LinSrgba, strength: f32) -> Self {
+    pub fn new(color: Color, strength: f32) -> Self {
         Self {
             color: color * strength,
         }
@@ -76,7 +76,7 @@ impl Emission {
 }
 
 impl Material for Emission {
-    fn scatter(&self, _ray: &Ray, _hit: &HitRecord) -> (LinSrgba, Option<Ray>) {
+    fn scatter(&self, _ray: &Ray, _hit: &HitRecord) -> (Color, Option<Ray>) {
         (self.color, None)
     }
 }
@@ -99,7 +99,7 @@ impl Dielectric {
 }
 
 impl Material for Dielectric {
-    fn scatter(&self, ray: &Ray, hit: &HitRecord) -> (LinSrgba, Option<Ray>) {
+    fn scatter(&self, ray: &Ray, hit: &HitRecord) -> (Color, Option<Ray>) {
         let refraction_ratio = if hit.front_face {
             1.0 / self.ir
         } else {
@@ -121,7 +121,7 @@ impl Material for Dielectric {
         };
 
         (
-            LinSrgba::new(1.0, 1.0, 1.0, 1.0),
+            Color::new(1.0, 1.0, 1.0),
             Some(Ray::new(hit.point, direction, ray.depth - 1)),
         )
     }

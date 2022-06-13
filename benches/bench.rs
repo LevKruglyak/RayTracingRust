@@ -2,20 +2,20 @@ use std::rc::Rc;
 
 use cgmath::Vector3;
 use criterion::{criterion_group, criterion_main, Criterion};
-use palette::LinSrgba;
 use ray_tracing_rust::{
     material::{Emission, Lambertian, Metal},
     objects::Sphere,
     render::RayTracingDemo,
+    color::Color,
 };
 
 fn criterion_benchmark(c: &mut Criterion) {
     let mut app = RayTracingDemo::new(100, 100);
-    let mat_ground = Rc::new(Lambertian::new(LinSrgba::new(0.8, 0.8, 0.4, 1.0)));
-    let mat_center = Rc::new(Lambertian::new(LinSrgba::new(0.8, 0.1, 0.1, 1.0)));
-    let mat_left = Rc::new(Metal::new(LinSrgba::new(1.0, 1.0, 1.0, 1.0), 0.03));
-    let mat_right = Rc::new(Metal::new(LinSrgba::new(0.8, 0.6, 0.2, 1.0), 0.08));
-    let mat_glow = Rc::new(Emission::new(LinSrgba::new(1.0, 1.0, 1.0, 1.0), 2.0));
+    let mat_ground = Rc::new(Lambertian::new(Color::new(0.8, 0.8, 0.4)));
+    let mat_center = Rc::new(Lambertian::new(Color::new(0.8, 0.1, 0.1)));
+    let mat_left = Rc::new(Metal::new(Color::new(1.0, 1.0, 1.0), 0.03));
+    let mat_right = Rc::new(Metal::new(Color::new(0.8, 0.6, 0.2), 0.08));
+    let mat_glow = Rc::new(Emission::new(Color::new(1.0, 1.0, 1.0), 2.0));
 
     app.objects.add(Box::new(Sphere::new(
         Vector3::new(10.0, -15.8, -1.0),

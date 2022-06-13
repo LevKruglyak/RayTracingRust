@@ -1,11 +1,11 @@
+use crate::color::Color;
 use crate::{
     material::{Dielectric, Emission, Lambertian, Material, Metal},
     objects::{HittableList, Sphere},
     ray::{Hittable, Ray},
     scene::SceneSettings,
 };
-use cgmath::{Vector3, InnerSpace};
-use palette::{LinSrgba, Pixel};
+use cgmath::{InnerSpace, Vector3};
 use rand::Rng;
 use rand::{distributions::Uniform, prelude::Distribution};
 use std::{
@@ -16,7 +16,7 @@ use std::{
 pub struct RayTracingDemo {
     width: u32,
     height: u32,
-    pixels: Vec<LinSrgba>,
+    pixels: Vec<Color>,
     pub objects: HittableList,
     pub scene: SceneSettings,
     pub last_time: Duration,
@@ -29,7 +29,7 @@ impl RayTracingDemo {
         Self {
             width,
             height,
-            pixels: vec![LinSrgba::new(1.0, 1.0, 1.0, 1.0); (width * height) as usize],
+            pixels: vec![Color::new(1.0, 1.0, 1.0); (width * height) as usize],
             scene: SceneSettings {
                 width: width as f32,
                 height: height as f32,
@@ -47,11 +47,15 @@ impl RayTracingDemo {
 
     pub fn setup(&mut self) {
         let mut rng = rand::thread_rng();
-        let mat_ground = Rc::new(Lambertian::new(LinSrgba::new(0.2, 0.2, 0.2, 1.0)));
+        let mat_ground = Rc::new(Lambertian::new(Color::new(0.2, 0.2, 0.2)));
 
         for x in -5..5 {
             for y in -5..5 {
-                let color = LinSrgba::new(rng.gen_range(0.1..1.0), rng.gen_range(0.1..1.0), rng.gen_range(0.1..1.0), 1.0);
+                let color = Color::new(
+                    rng.gen_range(0.1..1.0),
+                    rng.gen_range(0.1..1.0),
+                    rng.gen_range(0.1..1.0),
+                );
                 let material: Rc<dyn Material> = if rng.gen_bool(0.3) {
                     Rc::new(Lambertian::new(color))
                 } else if rng.gen_bool(0.5) {
@@ -75,7 +79,7 @@ impl RayTracingDemo {
         self.objects.add(Box::new(Sphere::new(
             Vector3::new(0.0, 0.5 - 1.0, -2.5),
             1.0,
-            Rc::new(Metal::new(LinSrgba::new(0.7, 0.7, 0.7, 1.0), 0.02)),
+            Rc::new(Metal::new(Color::new(0.7, 0.7, 0.7), 0.02)),
         )));
 
         self.objects.add(Box::new(Sphere::new(
@@ -85,17 +89,17 @@ impl RayTracingDemo {
         )));
     }
 
-    pub fn ray_color(&mut self, ray: &Ray) -> LinSrgba {
+    pub fn ray_color(&mut self, ray: &Ray) -> Color {
         // Base condition
         if ray.depth <= 0 {
-            return LinSrgba::new(0.0, 0.0, 0.0, 1.0);
+            return Color::new(0.0, 0.0, 0.0);
         }
 
         if let Some(hit) = self.objects.hit(ray, 0.01, f32::INFINITY) {
             if self.render_normals {
                 // Normal emissive
                 let normal = 0.5 * (hit.normal.normalize() + Vector3::new(1.0, 1.0, 1.0));
-                return LinSrgba::new(normal.x, normal.y, normal.z, 1.0);
+                return Color::new(normal.x, normal.y, normal.z);
             }
 
             let (attenuation, scattered) = hit.material.scatter(&ray, &hit);
@@ -106,10 +110,7 @@ impl RayTracingDemo {
                 attenuation
             }
         } else {
-            ray.vertical_grad(
-                LinSrgba::new(0.5, 0.7, 1.0, 1.0),
-                LinSrgba::new(1.0, 1.0, 1.0, 1.0),
-            )
+            ray.vertical_grad(Color::new(0.5, 0.7, 1.0), Color::new(1.0, 1.0, 1.0))
         }
     }
 
@@ -129,7 +130,7 @@ impl RayTracingDemo {
 
         for y in 0..self.height {
             for x in 0..self.width {
-                let mut color = LinSrgba::new(0.0, 0.0, 0.0, 1.0);
+                let mut color = Color::new(0.0, 0.0, 0.0);
 
                 // Antialiasing / sampling
                 for _ in 0..samples {
@@ -139,13 +140,11 @@ impl RayTracingDemo {
 
                     // Cast a ray
                     let ray = scene.camera.get_ray(u, v);
-                    color += self.ray_color(&ray);
+                    color = color + self.ray_color(&ray);
                 }
 
                 // Apply gamma correction
-                color.red = (color.red / (samples as f32)).sqrt();
-                color.blue = (color.blue / (samples as f32)).sqrt();
-                color.green = (color.green / (samples as f32)).sqrt();
+                color = Color::from(color.data().map(|channel| { (channel / samples as f32).sqrt() }));
 
                 // Gamma correction
                 self.pixels[(x + y * self.width) as usize] = color;
@@ -162,7 +161,7 @@ impl RayTracingDemo {
 
         assert_eq!(self.pixels.len() * 4, frame.len());
         for (pixel, result) in self.pixels.iter().zip(frame.chunks_exact_mut(4)) {
-            let pixel: [u8; 4] = LinSrgba::into_raw(pixel.into_format());
+            let pixel: [u8; 4] = pixel.into_raw();
             result.copy_from_slice(&pixel);
         }
     }

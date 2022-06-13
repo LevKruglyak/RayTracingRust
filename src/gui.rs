@@ -1,4 +1,4 @@
-use egui::{ClippedMesh, Context, TexturesDelta, panel::Side};
+use egui::{panel::Side, ClippedMesh, Context, TexturesDelta};
 use egui_wgpu_backend::{BackendError, RenderPass, ScreenDescriptor};
 use pixels::{wgpu, PixelsContext};
 use ray_tracing_rust::render::RayTracingDemo;
@@ -125,9 +125,7 @@ struct Gui {
 impl Gui {
     /// Create a `Gui`.
     fn new(app: Rc<RefCell<RayTracingDemo>>) -> Self {
-        Self {
-            app,
-        }
+        Self { app }
     }
 
     /// Create the UI using egui.

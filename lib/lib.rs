@@ -1,3 +1,4 @@
+pub mod color;
 pub mod material;
 pub mod objects;
 pub mod ray;
