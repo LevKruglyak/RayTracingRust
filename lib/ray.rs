@@ -56,6 +56,7 @@ impl HitRecord {
     }
 }
 
+#[typetag::serde(tag = "type")]
 pub trait Hittable: Sync {
     fn hit(&self, ray: &Ray, limits: (f32, f32)) -> Option<HitRecord>;
 }

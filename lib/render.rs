@@ -4,11 +4,10 @@ use crate::objects::Sphere;
 use crate::ray::{Hittable, Ray};
 use crate::scene::Scene;
 use cgmath::Vector3;
-use rand::{distributions::Uniform, prelude::Distribution};
 use rand::thread_rng;
+use rand::{distributions::Uniform, prelude::Distribution};
 use rayon::prelude::*;
 use std::time::{Duration, Instant};
-
 
 pub struct RayTracingDemo {
     width: u32,
@@ -20,6 +19,12 @@ pub struct RayTracingDemo {
 }
 
 impl RayTracingDemo {
+    pub fn load(path: &str) -> Self {
+        let file_contents =
+            std::fs::read_to_string(path).expect(&format!("failed to read file: {:?}", path)[..]);
+        RayTracingDemo::new(serde_json::from_str(&file_contents).unwrap())
+    }
+
     pub fn new(scene: Scene) -> Self {
         let width = scene.settings.viewport_width;
         let height = scene.settings.viewport_height;
@@ -115,11 +120,12 @@ impl RayTracingDemo {
                 *pixel = *pixel + Self::ray_color(&self.scene, &ray);
             }
 
-            // gamma correction
-            *pixel =
-                Color::from(pixel.data().map(|channel| {
-                    (channel / self.scene.settings.samples_per_pixel as f32).sqrt()
-                }));
+            // Gamma correction
+            *pixel = Color {
+                r: (pixel.r / self.scene.settings.samples_per_pixel as f32).sqrt(),
+                g: (pixel.g / self.scene.settings.samples_per_pixel as f32).sqrt(),
+                b: (pixel.b / self.scene.settings.samples_per_pixel as f32).sqrt(),
+            }
         };
 
         if self.scene.settings.enable_multithreading {

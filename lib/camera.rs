@@ -1,6 +1,7 @@
 use crate::{ray::Ray, utils::degrees_to_radians};
 use cgmath::{InnerSpace, Vector3};
 use derive_new::new;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, new)]
 pub struct RayOrigin {
@@ -20,7 +21,7 @@ impl RayOrigin {
     }
 }
 
-#[derive(Debug, new)]
+#[derive(Debug, Serialize, Deserialize, new)]
 pub struct Camera {
     pub lookfrom: Vector3<f32>,
     pub lookat: Vector3<f32>,

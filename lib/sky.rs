@@ -1,12 +1,15 @@
 use cgmath::InnerSpace;
+use serde::{Deserialize, Serialize};
 use std::f32::consts::PI;
 
 use crate::{color::Color, ray::Ray, utils::to_spherical_coords};
 
+#[typetag::serde(tag = "type")]
 pub trait Background: Sync {
     fn sample(&self, ray: &Ray) -> Color;
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct UniformBackground {
     color: Color,
 }
@@ -17,12 +20,14 @@ impl UniformBackground {
     }
 }
 
+#[typetag::serde]
 impl Background for UniformBackground {
     fn sample(&self, _: &Ray) -> Color {
         self.color
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct GradientBackground {
     up: Color,
     down: Color,
@@ -34,12 +39,14 @@ impl GradientBackground {
     }
 }
 
+#[typetag::serde]
 impl Background for GradientBackground {
     fn sample(&self, ray: &Ray) -> Color {
         ray.vertical_grad(self.up, self.down)
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct SkyMap {
     image: Vec<Color>,
     width: usize,
@@ -65,6 +72,7 @@ impl SkyMap {
     }
 }
 
+#[typetag::serde]
 impl Background for SkyMap {
     fn sample(&self, ray: &Ray) -> Color {
         let spherical_coords = to_spherical_coords(ray.direction.normalize());

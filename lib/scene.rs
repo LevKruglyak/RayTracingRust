@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::{
     camera::Camera,
     material::Material,
@@ -5,7 +7,7 @@ use crate::{
     sky::Background,
 };
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum RenderMode {
     Full,
     Clay,
@@ -13,7 +15,7 @@ pub enum RenderMode {
     Normal,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct RenderSettings {
     pub viewport_width: f32,
     pub viewport_height: f32,
@@ -23,6 +25,7 @@ pub struct RenderSettings {
     pub mode: RenderMode,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Scene {
     pub camera: Camera,
     pub settings: RenderSettings,
@@ -31,10 +34,10 @@ pub struct Scene {
     materials: Vec<Box<dyn Material>>,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Serialize, Deserialize)]
 pub struct MaterialHandle(usize);
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Serialize, Deserialize)]
 pub struct ObjectHandle(usize);
 
 impl Scene {
@@ -71,10 +74,8 @@ impl Scene {
         // in this impl as an index in a grow-only vector
         &self.materials[material.0]
     }
-}
 
-impl Hittable for Scene {
-    fn hit(&self, ray: &Ray, limits: (f32, f32)) -> Option<HitRecord> {
+    pub fn hit(&self, ray: &Ray, limits: (f32, f32)) -> Option<HitRecord> {
         let mut result = None;
         let mut closest_so_far = f32::INFINITY;
 

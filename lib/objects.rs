@@ -1,18 +1,19 @@
-use cgmath::{InnerSpace, Vector3};
-use derive_new::new;
-
 use crate::{
     ray::{HitRecord, Hittable, Ray},
     scene::MaterialHandle,
 };
+use cgmath::{InnerSpace, Vector3};
+use derive_new::new;
+use serde::{Deserialize, Serialize};
 
-#[derive(new)]
+#[derive(Serialize, Deserialize, new)]
 pub struct Sphere {
     center: Vector3<f32>,
     radius: f32,
     material: MaterialHandle,
 }
 
+#[typetag::serde]
 impl Hittable for Sphere {
     fn hit(&self, ray: &Ray, limits: (f32, f32)) -> Option<HitRecord> {
         let oc = ray.origin - self.center;

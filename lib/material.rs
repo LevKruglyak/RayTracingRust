@@ -2,16 +2,19 @@ use crate::color::Color;
 use cgmath::InnerSpace;
 use derive_new::new;
 use rand::{thread_rng, Rng};
+use serde::{Deserialize, Serialize};
 
 use crate::{
     ray::{HitRecord, Ray},
     utils::{near_zero, random_on_unit_sphere, reflect, refract},
 };
 
+#[typetag::serde(tag = "type")]
 pub trait Material: Sync {
     fn scatter(&self, ray: &Ray, hit: &HitRecord) -> (Color, Option<Ray>);
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Lambertian {
     albedo: Color,
 }
@@ -22,6 +25,7 @@ impl Lambertian {
     }
 }
 
+#[typetag::serde]
 impl Material for Lambertian {
     fn scatter(&self, ray: &Ray, hit: &HitRecord) -> (Color, Option<Ray>) {
         let mut scatter_direction = hit.normal + random_on_unit_sphere();
@@ -36,6 +40,7 @@ impl Material for Lambertian {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Metal {
     albedo: Color,
     fuzz: f32,
@@ -47,6 +52,7 @@ impl Metal {
     }
 }
 
+#[typetag::serde]
 impl Material for Metal {
     fn scatter(&self, ray: &Ray, hit: &HitRecord) -> (Color, Option<Ray>) {
         let reflected = reflect(ray.direction, hit.normal).normalize();
@@ -64,6 +70,7 @@ impl Material for Metal {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Emission {
     color: Color,
 }
@@ -76,12 +83,14 @@ impl Emission {
     }
 }
 
+#[typetag::serde]
 impl Material for Emission {
     fn scatter(&self, _ray: &Ray, _hit: &HitRecord) -> (Color, Option<Ray>) {
         (self.color, None)
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Dielectric {
     ir: f32,
 }
@@ -99,6 +108,7 @@ impl Dielectric {
     }
 }
 
+#[typetag::serde]
 impl Material for Dielectric {
     fn scatter(&self, ray: &Ray, hit: &HitRecord) -> (Color, Option<Ray>) {
         let refraction_ratio = if hit.front_face {
@@ -128,13 +138,14 @@ impl Material for Dielectric {
     }
 }
 
-#[derive(new)]
+#[derive(new, Serialize, Deserialize)]
 pub struct MixMaterial {
     first: Box<dyn Material>,
     second: Box<dyn Material>,
     factor: f32,
 }
 
+#[typetag::serde]
 impl Material for MixMaterial {
     fn scatter(&self, ray: &Ray, hit: &HitRecord) -> (Color, Option<Ray>) {
         if thread_rng().gen_range(0.0..1.0) >= self.factor {

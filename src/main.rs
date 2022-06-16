@@ -12,8 +12,8 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
 
-mod gui;
 mod demo;
+mod gui;
 
 const RENDER_WIDTH: u32 = 1200;
 const RENDER_HEIGHT: u32 = 1000;
