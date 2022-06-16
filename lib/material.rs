@@ -7,7 +7,7 @@ use crate::{
     utils::{near_zero, random_on_unit_sphere, reflect, refract},
 };
 
-pub trait Material {
+pub trait Material: Sync {
     fn scatter(&self, ray: &Ray, hit: &HitRecord) -> (Color, Option<Ray>);
 }
 
@@ -30,7 +30,7 @@ impl Material for Lambertian {
             scatter_direction = hit.normal;
         }
 
-        let scattered = Ray::new(hit.point, scatter_direction, ray.depth - 1);
+        let scattered = Ray::new(hit.point, scatter_direction, ray.depth + 1);
         (self.albedo, Some(scattered))
     }
 }
@@ -52,7 +52,7 @@ impl Material for Metal {
         let scattered = Ray::new(
             hit.point,
             reflected + self.fuzz * random_on_unit_sphere(),
-            ray.depth - 1,
+            ray.depth + 1,
         );
 
         if scattered.direction.dot(hit.normal) > 0.0 {
@@ -122,7 +122,7 @@ impl Material for Dielectric {
 
         (
             Color::new(1.0, 1.0, 1.0),
-            Some(Ray::new(hit.point, direction, ray.depth - 1)),
+            Some(Ray::new(hit.point, direction, ray.depth + 1)),
         )
     }
 }

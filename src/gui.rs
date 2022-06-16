@@ -134,13 +134,16 @@ impl Gui {
             .open(&mut true)
             .show(ctx, |ui| {
                 let mut app = self.app.borrow_mut();
-                ui.label("Focal length:");
-                ui.add(egui::Slider::new(&mut app.scene.focal_length, 0.01..=2.0));
                 ui.label("Samples per pixel:");
-                ui.add(egui::Slider::new(&mut app.scene.samples_per_pixel, 1..=200));
+                ui.add(egui::Slider::new(
+                    &mut app.scene.settings.samples_per_pixel,
+                    1..=200,
+                ));
                 ui.label("Max ray depth:");
-                ui.add(egui::Slider::new(&mut app.scene.max_ray_depth, 1..=50));
-                ui.checkbox(&mut app.render_normals, "Render normals");
+                ui.add(egui::Slider::new(
+                    &mut app.scene.settings.max_ray_depth,
+                    1..=50,
+                ));
 
                 ui.separator();
                 if ui.button("Render Image").clicked() {

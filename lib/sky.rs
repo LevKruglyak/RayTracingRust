@@ -1,9 +1,9 @@
+use cgmath::{InnerSpace, Vector2};
 use std::f32::consts::PI;
-use cgmath::{Vector2, InnerSpace};
 
 use crate::{color::Color, ray::Ray, utils::to_spherical_coords};
 
-pub trait Background {
+pub trait Background: Sync {
     fn sample(&self, ray: &Ray) -> Color;
 }
 
@@ -50,17 +50,16 @@ impl SkyMap {
     pub fn new(path: &str) -> Self {
         let image = exr::prelude::read_first_rgba_layer_from_file(
             path,
-            |resolution, _| {
-                Self {
-                    image: vec![Color::default(); resolution.width() * resolution.height()],
-                    width: resolution.width(),
-                    height: resolution.height(),
-                }
+            |resolution, _| Self {
+                image: vec![Color::default(); resolution.width() * resolution.height()],
+                width: resolution.width(),
+                height: resolution.height(),
             },
             |skymap: &mut Self, position, (r, g, b, _): (f32, f32, f32, f32)| {
                 skymap.image[position.x() + position.y() * skymap.width] = Color::new(r, g, b);
             },
-        ).expect("could not read image!");
+        )
+        .expect("could not read image!");
         println!("loaded '{}'", path);
         image.layer_data.channel_data.pixels
     }

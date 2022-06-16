@@ -1,62 +1,20 @@
-use std::rc::Rc;
-
 use cgmath::{InnerSpace, Vector3};
+use derive_new::new;
 
 use crate::{
-    material::Material,
     ray::{HitRecord, Hittable, Ray},
+    scene::MaterialHandle,
 };
 
-pub struct HittableList {
-    objects: Vec<Box<dyn Hittable>>,
-}
-
-impl HittableList {
-    pub fn new() -> Self {
-        Self {
-            objects: Vec::new(),
-        }
-    }
-
-    pub fn add(&mut self, object: Box<dyn Hittable>) {
-        self.objects.push(object);
-    }
-}
-
-impl Hittable for HittableList {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
-        let mut result = None;
-        let mut closest_so_far = t_max;
-
-        for object in &self.objects {
-            if let Some(hit) = object.hit(&ray, t_min, closest_so_far) {
-                closest_so_far = hit.t;
-                result = Some(hit);
-            }
-        }
-
-        result
-    }
-}
-
+#[derive(new)]
 pub struct Sphere {
     center: Vector3<f32>,
     radius: f32,
-    material: Rc<dyn Material>,
-}
-
-impl Sphere {
-    pub fn new(center: Vector3<f32>, radius: f32, material: Rc<dyn Material>) -> Self {
-        Self {
-            center,
-            radius,
-            material,
-        }
-    }
+    material: MaterialHandle,
 }
 
 impl Hittable for Sphere {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+    fn hit(&self, ray: &Ray, limits: (f32, f32)) -> Option<HitRecord> {
         let oc = ray.origin - self.center;
 
         let a = ray.direction.magnitude2();
@@ -72,9 +30,9 @@ impl Hittable for Sphere {
 
         // Find the nearest root that lies in an acceptable range
         let mut root = (-half_b - sqrtd) / a;
-        if root < t_min || t_max < root {
+        if root < limits.0 || limits.1 < root {
             root = (-half_b + sqrtd) / a;
-            if root < t_min || t_max < root {
+            if root < limits.0 || limits.1 < root {
                 return None;
             }
         }
@@ -82,12 +40,6 @@ impl Hittable for Sphere {
         let point = ray.at(root);
         let normal = (point - self.center) / self.radius;
 
-        Some(HitRecord::new(
-            point,
-            normal,
-            root,
-            ray,
-            self.material.clone(),
-        ))
+        Some(HitRecord::new(point, normal, root, ray, self.material))
     }
 }

@@ -1,85 +1,80 @@
-use crate::ray::Ray;
-use cgmath::Vector3;
+use crate::{
+    camera::Camera,
+    material::Material,
+    ray::{HitRecord, Hittable, Ray},
+    sky::Background,
+};
 
-#[derive(Debug)]
-pub struct Camera {
-    pub focal_length: f32,
-    pub origin: Vector3<f32>,
-    pub horizontal: Vector3<f32>,
-    pub vertical: Vector3<f32>,
-    pub lower_left_corner: Vector3<f32>,
-    pub max_ray_depth: u8,
+#[derive(Debug, Clone, Copy)]
+pub enum RenderMode {
+    Full,
+    Clay,
+    Silhouette,
+    Normal,
 }
 
-impl Camera {
-    pub fn new(
-        viewport_width: f32,
-        viewport_height: f32,
-        focal_length: f32,
-        max_ray_depth: u8,
-    ) -> Self {
-        let origin = Vector3::new(0.0, 0.0, 0.0);
-        let horizontal = Vector3::new(viewport_width, 0.0, 0.0);
-        let vertical = Vector3::new(0.0, viewport_height, 0.0);
-
-        Self {
-            focal_length,
-            origin,
-            horizontal,
-            vertical,
-            lower_left_corner: origin
-                - horizontal / 2.0
-                - vertical / 2.0
-                - Vector3::new(0.0, 0.0, focal_length),
-            max_ray_depth,
-        }
-    }
-
-    pub fn get_ray(&self, u: f32, v: f32) -> Ray {
-        Ray::new(
-            self.origin,
-            self.lower_left_corner + self.horizontal * u + self.vertical * v - self.origin,
-            self.max_ray_depth,
-        )
-    }
-}
-
-#[derive(Debug)]
-pub struct Scene {
+#[derive(Debug, Clone, Copy)]
+pub struct RenderSettings {
     pub viewport_width: f32,
     pub viewport_height: f32,
-    pub camera: Camera,
-    pub samples_per_pixel: u16,
-}
-
-#[derive(Debug)]
-pub struct SceneSettings {
-    pub width: f32,
-    pub height: f32,
-    pub viewport_ratio: f32,
-    pub focal_length: f32,
-    pub samples_per_pixel: u16,
+    pub samples_per_pixel: u32,
     pub max_ray_depth: u8,
+    pub mode: RenderMode,
 }
 
-impl SceneSettings {
-    pub fn build_scene(&self) -> Scene {
-        let viewport_width = self.viewport_ratio;
-        let viewport_height = self.viewport_ratio * self.height / self.width;
+pub struct Scene {
+    pub camera: Camera,
+    pub settings: RenderSettings,
+    pub background: Box<dyn Background>,
+    // Temporary pub
+    pub objects: Vec<Box<dyn Hittable>>,
+    pub materials: Vec<Box<dyn Material>>,
+}
 
-        // Camera
-        let camera = Camera::new(
-            viewport_width,
-            viewport_height,
-            self.focal_length,
-            self.max_ray_depth,
-        );
+#[derive(Clone, Copy)]
+pub struct MaterialHandle(usize);
 
-        Scene {
-            viewport_width,
-            viewport_height,
-            camera,
-            samples_per_pixel: self.samples_per_pixel,
+#[derive(Clone, Copy)]
+pub struct ObjectHandle(usize);
+
+impl Scene {
+    pub fn add_object(&mut self, object: Box<dyn Hittable>) -> ObjectHandle {
+        self.objects.push(object);
+        ObjectHandle(self.objects.len() - 1)
+    }
+
+    #[inline]
+    pub fn object(&self, object: ObjectHandle) -> &Box<dyn Hittable> {
+        // SAFETY: Shouln't be out of bounds because ObjectHandle only constructed
+        // in this impl as an index in a grow-only vector
+        &self.objects[object.0]
+    }
+
+    pub fn add_material(&mut self, material: Box<dyn Material>) -> MaterialHandle {
+        self.materials.push(material);
+        MaterialHandle(self.materials.len() - 1)
+    }
+
+    #[inline]
+    pub fn material(&self, material: MaterialHandle) -> &Box<dyn Material> {
+        // SAFETY: Shouln't be out of bounds because ObjectHandle only constructed
+        // in this impl as an index in a grow-only vector
+        &self.materials[material.0]
+    }
+}
+
+impl Hittable for Scene {
+    fn hit(&self, ray: &Ray, limits: (f32, f32)) -> Option<HitRecord> {
+        let mut result = None;
+        let mut closest_so_far = f32::INFINITY;
+
+        for object in &self.objects {
+            if let Some(hit) = object.hit(&ray, (limits.0, closest_so_far)) {
+                closest_so_far = hit.t;
+                result = Some(hit);
+            }
         }
+
+        result
     }
 }
