@@ -19,6 +19,7 @@ pub struct RenderSettings {
     pub viewport_height: f32,
     pub samples_per_pixel: u32,
     pub max_ray_depth: u8,
+    pub enable_multithreading: bool,
     pub mode: RenderMode,
 }
 

@@ -1,4 +1,4 @@
-use cgmath::{InnerSpace, Vector2};
+use cgmath::InnerSpace;
 use std::f32::consts::PI;
 
 use crate::{color::Color, ray::Ray, utils::to_spherical_coords};
@@ -71,7 +71,7 @@ impl Background for SkyMap {
         let u = spherical_coords.x / PI;
         let v = spherical_coords.y / (2.0 * PI);
         let x = (v * self.width as f32) as usize % self.width;
-        let y = (u * self.height as f32) as usize % self.height;
+        let y = self.height - (u * self.height as f32) as usize % self.height;
         self.image[x + y * self.width]
     }
 }

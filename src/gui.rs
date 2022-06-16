@@ -150,6 +150,10 @@ impl Gui {
                     &mut app.scene.camera.vertical_fov,
                     0.60..=120.0,
                 ));
+                ui.add(egui::Checkbox::new(
+                    &mut app.scene.settings.enable_multithreading,
+                    "Enable multithreading",
+                ));
 
                 ui.separator();
                 if ui.button("Render Image").clicked() {

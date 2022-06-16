@@ -44,6 +44,7 @@ impl RayTracingDemo {
                     viewport_height: height as f32,
                     samples_per_pixel: 5,
                     max_ray_depth: 6,
+                    enable_multithreading: true,
                     mode: RenderMode::Full,
                 },
                 objects: Vec::new(),
@@ -104,34 +105,43 @@ impl RayTracingDemo {
 
         // Build up the scene
         let ray_origin = self.scene.camera.ray_origin();
-
         let range = Uniform::from(0.0..1.0);
 
-        self.pixels
-            .par_iter_mut()
-            .enumerate()
-            .for_each(|(index, pixel)| {
-                let x = index % (self.width as usize);
-                let y = index / (self.width as usize);
+        // Closure to do computationally heavy task
+        let calculate_pixel = |(index, pixel): (usize, &mut Color)| {
+            let x = index % (self.width as usize);
+            let y = index / (self.width as usize);
 
-                *pixel = Color::new(0.0, 0.0, 0.0);
-                let mut rng = thread_rng();
+            *pixel = Color::new(0.0, 0.0, 0.0);
+            let mut rng = thread_rng();
 
-                for _ in 0..self.scene.settings.samples_per_pixel {
-                    // UV coordinates
-                    let u = (x as f32 + range.sample(&mut rng)) / (self.width - 1) as f32;
-                    let v = (y as f32 + range.sample(&mut rng)) / (self.height - 1) as f32;
+            for _ in 0..self.scene.settings.samples_per_pixel {
+                // UV coordinates
+                let u = (x as f32 + range.sample(&mut rng)) / (self.width - 1) as f32;
+                let v = (y as f32 + range.sample(&mut rng)) / (self.height - 1) as f32;
 
-                    // Cast a ray
-                    let ray = ray_origin.get_ray(u, v);
-                    *pixel = *pixel + Self::ray_color(&self.scene, &ray);
-                }
+                // Cast a ray
+                let ray = ray_origin.get_ray(u, v);
+                *pixel = *pixel + Self::ray_color(&self.scene, &ray);
+            }
 
-                // gamma correction
-                *pixel = Color::from(pixel.data().map(|channel| {
-                    (channel / self.scene.settings.samples_per_pixel as f32).sqrt()
-                }));
-            });
+            // gamma correction
+            *pixel = Color::from(pixel.data().map(|channel| {
+                (channel / self.scene.settings.samples_per_pixel as f32).sqrt()
+            }));
+        };
+
+        if self.scene.settings.enable_multithreading {
+            self.pixels
+                .par_iter_mut()
+                .enumerate()
+                .for_each(calculate_pixel);
+        } else {
+            self.pixels
+                .iter_mut()
+                .enumerate()
+                .for_each(calculate_pixel);
+        }
 
         self.last_time = current.elapsed();
         self.needs_redraw = true;
