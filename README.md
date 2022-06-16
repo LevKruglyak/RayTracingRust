@@ -1,4 +1,4 @@
-# A Simple single-threaded CPU raytracer written in Rust
+# A simple multi-threaded CPU raytracer written in Rust
 
 Based off of the tutorial: https://raytracing.github.io/books/RayTracingInOneWeekend.html#wherenext?/afinalrender.
 
