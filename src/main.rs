@@ -2,6 +2,7 @@
 #![forbid(unsafe_code)]
 
 use crate::gui::Framework;
+use demo::setup;
 use log::error;
 use pixels::{Error, Pixels, SurfaceTexture};
 use std::{cell::RefCell, rc::Rc};
@@ -11,9 +12,8 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
 
-use ray_tracing_rust::render::RayTracingDemo;
-
 mod gui;
+mod demo;
 
 const RENDER_WIDTH: u32 = 1200;
 const RENDER_HEIGHT: u32 = 1000;
@@ -35,11 +35,7 @@ fn main() -> Result<(), Error> {
             .unwrap()
     };
 
-    let app = Rc::new(RefCell::new(RayTracingDemo::new(
-        RENDER_WIDTH,
-        RENDER_HEIGHT,
-    )));
-    app.borrow_mut().setup();
+    let app = Rc::new(RefCell::new(setup(RENDER_WIDTH, RENDER_HEIGHT)));
 
     let (mut pixels, mut framework) = {
         let window_size = window.inner_size();

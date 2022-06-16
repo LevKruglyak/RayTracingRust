@@ -27,9 +27,8 @@ pub struct Scene {
     pub camera: Camera,
     pub settings: RenderSettings,
     pub background: Box<dyn Background>,
-    // Temporary pub
-    pub objects: Vec<Box<dyn Hittable>>,
-    pub materials: Vec<Box<dyn Material>>,
+    objects: Vec<Box<dyn Hittable>>,
+    materials: Vec<Box<dyn Material>>,
 }
 
 #[derive(Clone, Copy)]
@@ -39,6 +38,16 @@ pub struct MaterialHandle(usize);
 pub struct ObjectHandle(usize);
 
 impl Scene {
+    pub fn new(settings: RenderSettings, camera: Camera, background: Box<dyn Background>) -> Self {
+        Self {
+            camera,
+            settings,
+            background,
+            objects: Vec::new(),
+            materials: Vec::new(),
+        }
+    }
+
     pub fn add_object(&mut self, object: Box<dyn Hittable>) -> ObjectHandle {
         self.objects.push(object);
         ObjectHandle(self.objects.len() - 1)

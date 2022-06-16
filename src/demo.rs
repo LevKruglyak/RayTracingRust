@@ -1,5 +1,4 @@
 use cgmath::Vector3;
-use criterion::{criterion_group, criterion_main, Criterion};
 use ray_tracing_rust::{
     camera::Camera,
     color::Color,
@@ -10,11 +9,11 @@ use ray_tracing_rust::{
     sky::UniformBackground,
 };
 
-fn criterion_benchmark(c: &mut Criterion) {
+pub fn setup(width: u32, height: u32) -> RayTracingDemo {
     let scene = Scene::new(
         RenderSettings {
-            viewport_width: 100.0,
-            viewport_height: 100.0,
+            viewport_width: width as f32,
+            viewport_height: height as f32,
             samples_per_pixel: 5,
             max_ray_depth: 6,
             enable_multithreading: true,
@@ -25,7 +24,7 @@ fn criterion_benchmark(c: &mut Criterion) {
             lookat: Vector3::new(0.0, 0.0, -1.0),
             vertical: Vector3::new(0.0, 1.0, 0.0),
             vertical_fov: 90.0,
-            aspect_ratio: 1.0,
+            aspect_ratio: (width as f32) / (height as f32),
         },
         Box::new(UniformBackground::new(Color::new(0.6, 0.6, 0.6))),
     );
@@ -71,9 +70,32 @@ fn criterion_benchmark(c: &mut Criterion) {
         100.0,
         mat_ground,
     )));
-
-    c.bench_function("render", |b| b.iter(|| app.update()));
+    app
 }
+    // let mat_metal = Box::new(Metal::new(Color::new(1.0, 1.0, 1.0), 0.02));
+    // let mat_diffuse = Box::new(Lambertian::new(Color::new(1.0, 0.2, 0.02)));
+    // let mat_glass = self.scene.add_material(Box::new(Dielectric::new(1.5)));
+    // let mat_sphere =
+    //     self.scene
+    //         .add_material(Box::new(MixMaterial::new(mat_metal, mat_diffuse, 0.9)));
+    // let mat_ground = self
+    //     .scene
+    //     .add_material(Box::new(Lambertian::new(Color::new(0.2, 0.2, 0.2))));
 
-criterion_group!(benches, criterion_benchmark);
-criterion_main!(benches);
+    // let ground_radius = 100.0;
+    // let _ground = self.scene.add_object(Box::new(Sphere::new(
+    //     Vector3::new(0.0, 0.0 - ground_radius, -1.0),
+    //     ground_radius,
+    //     mat_ground,
+    // )));
+    // let _glass = self.scene.add_object(Box::new(Sphere::new(
+    //     Vector3::new(0.0, 0.5, -1.0),
+    //     0.5,
+    //     mat_glass,
+    // )));
+    // let _small_ball = self.scene.add_object(Box::new(Sphere::new(
+    //     Vector3::new(-0.9, 0.2, -0.7),
+    //     0.2,
+    //     mat_sphere,
+    // )));
+

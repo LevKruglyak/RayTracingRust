@@ -24,33 +24,17 @@ pub struct RayTracingDemo {
 }
 
 impl RayTracingDemo {
-    pub fn new(width: u32, height: u32) -> Self {
-        let aspect_ratio = (width as f32) / (height as f32);
+    pub fn new(scene: Scene) -> Self {
+        let width = scene.settings.viewport_width;
+        let height = scene.settings.viewport_height;
+
+        let aspect_ratio = width / height;
 
         Self {
-            width,
-            height,
+            width: width as u32,
+            height: height as u32,
             pixels: vec![Color::new(1.0, 1.0, 1.0); (width * height) as usize],
-            scene: Scene {
-                camera: Camera {
-                    lookfrom: Vector3::new(0.0, 1.0, 0.0),
-                    lookat: Vector3::new(0.0, 0.5, -1.0),
-                    vertical: Vector3::new(0.0, 1.0, 0.0),
-                    vertical_fov: 90.0,
-                    aspect_ratio,
-                },
-                settings: RenderSettings {
-                    viewport_width: width as f32,
-                    viewport_height: height as f32,
-                    samples_per_pixel: 5,
-                    max_ray_depth: 6,
-                    enable_multithreading: true,
-                    mode: RenderMode::Full,
-                },
-                objects: Vec::new(),
-                materials: Vec::new(),
-                background: Box::new(SkyMap::new("assets/indoor.exr")),
-            },
+            scene,
             needs_redraw: true,
             last_time: Duration::new(0, 0),
         }
@@ -60,7 +44,9 @@ impl RayTracingDemo {
         let mat_metal = Box::new(Metal::new(Color::new(1.0, 1.0, 1.0), 0.02));
         let mat_diffuse = Box::new(Lambertian::new(Color::new(1.0, 0.2, 0.02)));
         let mat_glass = self.scene.add_material(Box::new(Dielectric::new(1.5)));
-        let mat_sphere = self.scene.add_material(Box::new(MixMaterial::new(mat_metal, mat_diffuse, 0.9)));
+        let mat_sphere =
+            self.scene
+                .add_material(Box::new(MixMaterial::new(mat_metal, mat_diffuse, 0.9)));
         let mat_ground = self
             .scene
             .add_material(Box::new(Lambertian::new(Color::new(0.2, 0.2, 0.2))));
@@ -134,9 +120,10 @@ impl RayTracingDemo {
             }
 
             // gamma correction
-            *pixel = Color::from(pixel.data().map(|channel| {
-                (channel / self.scene.settings.samples_per_pixel as f32).sqrt()
-            }));
+            *pixel =
+                Color::from(pixel.data().map(|channel| {
+                    (channel / self.scene.settings.samples_per_pixel as f32).sqrt()
+                }));
         };
 
         if self.scene.settings.enable_multithreading {
@@ -145,10 +132,7 @@ impl RayTracingDemo {
                 .enumerate()
                 .for_each(calculate_pixel);
         } else {
-            self.pixels
-                .iter_mut()
-                .enumerate()
-                .for_each(calculate_pixel);
+            self.pixels.iter_mut().enumerate().for_each(calculate_pixel);
         }
 
         self.last_time = current.elapsed();

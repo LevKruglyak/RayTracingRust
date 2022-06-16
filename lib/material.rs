@@ -1,7 +1,7 @@
 use crate::color::Color;
 use cgmath::InnerSpace;
 use derive_new::new;
-use rand::{Rng, thread_rng};
+use rand::{thread_rng, Rng};
 
 use crate::{
     ray::{HitRecord, Ray},
