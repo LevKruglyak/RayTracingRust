@@ -6,8 +6,9 @@ use crate::ray::{Hittable, Ray};
 use crate::scene::{RenderMode, RenderSettings, Scene};
 use crate::sky::{Background, GradientBackground, SkyMap};
 use cgmath::{InnerSpace, Vector3};
-use rand::Rng;
 use rand::{distributions::Uniform, prelude::Distribution};
+use rand::{thread_rng, Rng};
+use rayon::prelude::*;
 use std::{
     rc::Rc,
     time::{Duration, Instant},
@@ -32,7 +33,7 @@ impl RayTracingDemo {
             pixels: vec![Color::new(1.0, 1.0, 1.0); (width * height) as usize],
             scene: Scene {
                 camera: Camera {
-                    lookfrom: Vector3::new(0.0, 1.0, 0.0),
+                    lookfrom: Vector3::new(0.0, 0.0, 0.0),
                     lookat: Vector3::new(0.0, 0.0, -1.0),
                     vertical: Vector3::new(0.0, 1.0, 0.0),
                     vertical_fov: 90.0,
@@ -55,44 +56,46 @@ impl RayTracingDemo {
     }
 
     pub fn setup(&mut self) {
-        let mat_glass = self
-            .scene
-            .add_material(Box::new(Dielectric::new(1.5)));
+        let mat_glass = self.scene.add_material(Box::new(Dielectric::new(1.5)));
         let mat_ground = self
             .scene
             .add_material(Box::new(Lambertian::new(Color::new(0.2, 0.2, 0.2))));
 
         let ground_radius = 10.0;
-        let _ground = self
-            .scene
-            .add_object(Box::new(Sphere::new(Vector3::new(0.0, 0.0 - ground_radius, -1.0), ground_radius, mat_ground)));
-        let _glass = self
-            .scene
-            .add_object(Box::new(Sphere::new(Vector3::new(0.0, 0.5, -1.0), 0.5, mat_glass)));
+        let _ground = self.scene.add_object(Box::new(Sphere::new(
+            Vector3::new(0.0, 0.0 - ground_radius, -1.0),
+            ground_radius,
+            mat_ground,
+        )));
+        let _glass = self.scene.add_object(Box::new(Sphere::new(
+            Vector3::new(0.0, 0.5, -1.0),
+            0.5,
+            mat_glass,
+        )));
     }
 
-    pub fn ray_color(&self, ray: &Ray) -> Color {
+    pub fn ray_color(scene: &Scene, ray: &Ray) -> Color {
         // Base condition
-        if ray.depth >= self.scene.settings.max_ray_depth {
+        if ray.depth >= scene.settings.max_ray_depth {
             return Color::new(0.0, 0.0, 0.0);
         }
 
-        if let Some(hit) = self.scene.hit(ray, (0.01, f32::INFINITY)) {
+        if let Some(hit) = scene.hit(ray, (0.01, f32::INFINITY)) {
             // if self.render_normals {
             //     // Normal emissive
             //     let normal = 0.5 * (hit.normal.normalize() + Vector3::new(1.0, 1.0, 1.0));
             //     return Color::new(normal.x, normal.y, normal.z);
             // }
 
-            let (attenuation, scattered) = self.scene.material(hit.material).scatter(&ray, &hit);
+            let (attenuation, scattered) = scene.material(hit.material).scatter(&ray, &hit);
 
             if let Some(scattered) = scattered {
-                attenuation * self.ray_color(&scattered)
+                attenuation * Self::ray_color(scene, &scattered)
             } else {
                 attenuation
             }
         } else {
-            self.scene.background.sample(ray)
+            scene.background.sample(ray)
         }
     }
 
@@ -102,14 +105,18 @@ impl RayTracingDemo {
         // Build up the scene
         let ray_origin = self.scene.camera.ray_origin();
 
-        let mut rng = rand::thread_rng();
         let range = Uniform::from(0.0..1.0);
 
-        for y in 0..self.height {
-            for x in 0..self.width {
-                let mut color = Color::new(0.0, 0.0, 0.0);
+        self.pixels
+            .par_iter_mut()
+            .enumerate()
+            .for_each(|(index, pixel)| {
+                let x = index % (self.width as usize);
+                let y = index / (self.width as usize);
 
-                // Antialiasing / sampling
+                *pixel = Color::new(0.0, 0.0, 0.0);
+                let mut rng = thread_rng();
+
                 for _ in 0..self.scene.settings.samples_per_pixel {
                     // UV coordinates
                     let u = (x as f32 + range.sample(&mut rng)) / (self.width - 1) as f32;
@@ -117,18 +124,14 @@ impl RayTracingDemo {
 
                     // Cast a ray
                     let ray = ray_origin.get_ray(u, v);
-                    color = color + self.ray_color(&ray);
+                    *pixel = *pixel + Self::ray_color(&self.scene, &ray);
                 }
 
-                // self.y gamma correction
-                color = Color::from(color.data().map(|channel| {
+                // gamma correction
+                *pixel = Color::from(pixel.data().map(|channel| {
                     (channel / self.scene.settings.samples_per_pixel as f32).sqrt()
                 }));
-
-                // Gamma correction
-                self.pixels[(x + y * self.width) as usize] = color;
-            }
-        }
+            });
 
         self.last_time = current.elapsed();
         self.needs_redraw = true;

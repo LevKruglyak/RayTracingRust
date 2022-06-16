@@ -9,11 +9,21 @@ use ray_tracing_rust::{
 
 fn criterion_benchmark(c: &mut Criterion) {
     let mut app = RayTracingDemo::new(100, 100);
-    let mat_ground = app.scene.add_material(Box::new(Lambertian::new(Color::new(0.8, 0.8, 0.4))));
-    let mat_center = app.scene.add_material(Box::new(Lambertian::new(Color::new(0.8, 0.1, 0.1))));
-    let mat_left = app.scene.add_material(Box::new(Metal::new(Color::new(1.0, 1.0, 1.0), 0.03)));
-    let mat_right = app.scene.add_material(Box::new(Metal::new(Color::new(0.8, 0.6, 0.2), 0.08)));
-    let mat_glow = app.scene.add_material(Box::new(Emission::new(Color::new(1.0, 1.0, 1.0), 2.0)));
+    let mat_ground = app
+        .scene
+        .add_material(Box::new(Lambertian::new(Color::new(0.8, 0.8, 0.4))));
+    let mat_center = app
+        .scene
+        .add_material(Box::new(Lambertian::new(Color::new(0.8, 0.1, 0.1))));
+    let mat_left = app
+        .scene
+        .add_material(Box::new(Metal::new(Color::new(1.0, 1.0, 1.0), 0.03)));
+    let mat_right = app
+        .scene
+        .add_material(Box::new(Metal::new(Color::new(0.8, 0.6, 0.2), 0.08)));
+    let mat_glow = app
+        .scene
+        .add_material(Box::new(Emission::new(Color::new(1.0, 1.0, 1.0), 2.0)));
 
     app.scene.add_object(Box::new(Sphere::new(
         Vector3::new(10.0, -15.8, -1.0),

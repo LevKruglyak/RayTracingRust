@@ -145,12 +145,19 @@ impl Gui {
                     1..=50,
                 ));
 
+                ui.label("Field of view:");
+                ui.add(egui::Slider::new(
+                    &mut app.scene.camera.vertical_fov,
+                    0.60..=120.0,
+                ));
+
                 ui.separator();
                 if ui.button("Render Image").clicked() {
                     app.update();
                 }
 
                 ui.label(format!("Last render took: {:?}", app.last_time));
+                ui.label(format!("Using {:?} threads", rayon::current_num_threads()));
             });
     }
 }
