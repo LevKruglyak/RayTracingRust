@@ -57,8 +57,9 @@ impl RayTracingDemo {
     }
 
     pub fn setup(&mut self) {
-        let mat_metal = Box::new(Metal::new(Color::new(1.0, 1.0, 1.0), 0.09));
-        let mat_diffuse = Box::new(Lambertian::new(Color::new(1.0, 0.2, 0.2)));
+        let mat_metal = Box::new(Metal::new(Color::new(1.0, 1.0, 1.0), 0.02));
+        let mat_diffuse = Box::new(Lambertian::new(Color::new(1.0, 0.2, 0.02)));
+        let mat_glass = self.scene.add_material(Box::new(Dielectric::new(1.5)));
         let mat_sphere = self.scene.add_material(Box::new(MixMaterial::new(mat_metal, mat_diffuse, 0.9)));
         let mat_ground = self
             .scene
@@ -73,6 +74,11 @@ impl RayTracingDemo {
         let _glass = self.scene.add_object(Box::new(Sphere::new(
             Vector3::new(0.0, 0.5, -1.0),
             0.5,
+            mat_glass,
+        )));
+        let _small_ball = self.scene.add_object(Box::new(Sphere::new(
+            Vector3::new(-0.9, 0.2, -0.7),
+            0.2,
             mat_sphere,
         )));
     }
