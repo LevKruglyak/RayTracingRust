@@ -79,7 +79,7 @@ impl Hittable for Scene {
         let mut closest_so_far = f32::INFINITY;
 
         for object in &self.objects {
-            if let Some(hit) = object.hit(&ray, (limits.0, closest_so_far)) {
+            if let Some(hit) = object.hit(ray, (limits.0, closest_so_far)) {
                 closest_so_far = hit.t;
                 result = Some(hit);
             }

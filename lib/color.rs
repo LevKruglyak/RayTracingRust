@@ -8,14 +8,14 @@ impl Color {
     #[inline]
     pub fn new(r: f32, g: f32, b: f32) -> Self {
         Self {
-            0: image::Rgb { 0: [r, g, b] },
+            0: image::Rgb([r, g, b]),
         }
     }
 
     #[inline]
     pub fn from(data: [f32; 3]) -> Self {
         Self {
-            0: image::Rgb { 0: data },
+            0: image::Rgb(data),
         }
     }
 

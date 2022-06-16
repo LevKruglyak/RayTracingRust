@@ -1,18 +1,14 @@
-use crate::camera::Camera;
 use crate::color::Color;
-use crate::material::{Dielectric, Emission, Lambertian, Material, Metal, MixMaterial};
+use crate::material::{Dielectric, Lambertian, Metal, MixMaterial};
 use crate::objects::Sphere;
 use crate::ray::{Hittable, Ray};
-use crate::scene::{RenderMode, RenderSettings, Scene};
-use crate::sky::{Background, GradientBackground, SkyMap};
-use cgmath::{InnerSpace, Vector3};
+use crate::scene::Scene;
+use cgmath::Vector3;
 use rand::{distributions::Uniform, prelude::Distribution};
-use rand::{thread_rng, Rng};
+use rand::thread_rng;
 use rayon::prelude::*;
-use std::{
-    rc::Rc,
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
+
 
 pub struct RayTracingDemo {
     width: u32,
@@ -28,7 +24,7 @@ impl RayTracingDemo {
         let width = scene.settings.viewport_width;
         let height = scene.settings.viewport_height;
 
-        let aspect_ratio = width / height;
+        let _aspect_ratio = width / height;
 
         Self {
             width: width as u32,
@@ -82,7 +78,7 @@ impl RayTracingDemo {
             //     return Color::new(normal.x, normal.y, normal.z);
             // }
 
-            let (attenuation, scattered) = scene.material(hit.material).scatter(&ray, &hit);
+            let (attenuation, scattered) = scene.material(hit.material).scatter(ray, &hit);
 
             if let Some(scattered) = scattered {
                 attenuation * Self::ray_color(scene, &scattered)
