@@ -1,6 +1,6 @@
 use crate::camera::Camera;
 use crate::color::Color;
-use crate::material::{Dielectric, Emission, Lambertian, Material, Metal};
+use crate::material::{Dielectric, Emission, Lambertian, Material, Metal, MixMaterial};
 use crate::objects::Sphere;
 use crate::ray::{Hittable, Ray};
 use crate::scene::{RenderMode, RenderSettings, Scene};
@@ -33,8 +33,8 @@ impl RayTracingDemo {
             pixels: vec![Color::new(1.0, 1.0, 1.0); (width * height) as usize],
             scene: Scene {
                 camera: Camera {
-                    lookfrom: Vector3::new(0.0, 0.0, 0.0),
-                    lookat: Vector3::new(0.0, 0.0, -1.0),
+                    lookfrom: Vector3::new(0.0, 1.0, 0.0),
+                    lookat: Vector3::new(0.0, 0.5, -1.0),
                     vertical: Vector3::new(0.0, 1.0, 0.0),
                     vertical_fov: 90.0,
                     aspect_ratio,
@@ -57,12 +57,14 @@ impl RayTracingDemo {
     }
 
     pub fn setup(&mut self) {
-        let mat_glass = self.scene.add_material(Box::new(Dielectric::new(1.5)));
+        let mat_metal = Box::new(Metal::new(Color::new(1.0, 1.0, 1.0), 0.09));
+        let mat_diffuse = Box::new(Lambertian::new(Color::new(1.0, 0.2, 0.2)));
+        let mat_sphere = self.scene.add_material(Box::new(MixMaterial::new(mat_metal, mat_diffuse, 0.9)));
         let mat_ground = self
             .scene
             .add_material(Box::new(Lambertian::new(Color::new(0.2, 0.2, 0.2))));
 
-        let ground_radius = 10.0;
+        let ground_radius = 100.0;
         let _ground = self.scene.add_object(Box::new(Sphere::new(
             Vector3::new(0.0, 0.0 - ground_radius, -1.0),
             ground_radius,
@@ -71,7 +73,7 @@ impl RayTracingDemo {
         let _glass = self.scene.add_object(Box::new(Sphere::new(
             Vector3::new(0.0, 0.5, -1.0),
             0.5,
-            mat_glass,
+            mat_sphere,
         )));
     }
 

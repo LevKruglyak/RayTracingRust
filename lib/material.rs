@@ -1,6 +1,7 @@
 use crate::color::Color;
 use cgmath::InnerSpace;
-use rand::Rng;
+use derive_new::new;
+use rand::{Rng, thread_rng};
 
 use crate::{
     ray::{HitRecord, Ray},
@@ -113,7 +114,7 @@ impl Material for Dielectric {
         let cannot_refract: bool = (refraction_ratio * sin_theta) > 1.0;
         let direction = if cannot_refract
             || Dielectric::reflectance(cos_theta, refraction_ratio)
-                > rand::thread_rng().gen_range(0.0..1.0)
+                > thread_rng().gen_range(0.0..1.0)
         {
             reflect(unit_direction, hit.normal)
         } else {
@@ -124,5 +125,22 @@ impl Material for Dielectric {
             Color::new(1.0, 1.0, 1.0),
             Some(Ray::new(hit.point, direction, ray.depth + 1)),
         )
+    }
+}
+
+#[derive(new)]
+pub struct MixMaterial {
+    first: Box<dyn Material>,
+    second: Box<dyn Material>,
+    factor: f32,
+}
+
+impl Material for MixMaterial {
+    fn scatter(&self, ray: &Ray, hit: &HitRecord) -> (Color, Option<Ray>) {
+        if thread_rng().gen_range(0.0..1.0) >= self.factor {
+            self.first.scatter(ray, hit)
+        } else {
+            self.second.scatter(ray, hit)
+        }
     }
 }
