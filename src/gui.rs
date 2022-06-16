@@ -137,7 +137,7 @@ impl Gui {
                 ui.label("Samples per pixel:");
                 ui.add(egui::Slider::new(
                     &mut app.scene.settings.samples_per_pixel,
-                    1..=200,
+                    1..=1000,
                 ));
                 ui.label("Max ray depth:");
                 ui.add(egui::Slider::new(
