@@ -17,8 +17,6 @@ pub enum RenderMode {
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct RenderSettings {
-    pub viewport_width: f32,
-    pub viewport_height: f32,
     pub samples_per_pixel: u32,
     pub max_ray_depth: u8,
     pub enable_multithreading: bool,

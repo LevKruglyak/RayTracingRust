@@ -2,9 +2,9 @@
 #![forbid(unsafe_code)]
 
 use crate::gui::Framework;
-use demo::setup;
 use log::error;
 use pixels::{Error, Pixels, SurfaceTexture};
+use ray_tracing_rust::render::RayTracingDemo;
 use std::{cell::RefCell, rc::Rc};
 use winit::dpi::LogicalSize;
 use winit::event::Event;
@@ -12,14 +12,15 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
 
-mod demo;
 mod gui;
 
-const RENDER_WIDTH: u32 = 1200;
-const RENDER_HEIGHT: u32 = 1000;
+const DEFAULT_SCENE: &'static str = "scenes/simple.json";
 
-const WINDOW_WIDTH: u32 = RENDER_WIDTH;
-const WINDOW_HEIGHT: u32 = RENDER_HEIGHT;
+const RENDER_WIDTH: u32 = 500;
+const RENDER_HEIGHT: u32 = 500;
+
+const WINDOW_WIDTH: u32 = 2 * RENDER_WIDTH;
+const WINDOW_HEIGHT: u32 = 2 * RENDER_HEIGHT;
 
 fn main() -> Result<(), Error> {
     env_logger::init();
@@ -35,7 +36,11 @@ fn main() -> Result<(), Error> {
             .unwrap()
     };
 
-    let app = Rc::new(RefCell::new(setup(RENDER_WIDTH, RENDER_HEIGHT)));
+    let app = Rc::new(RefCell::new(RayTracingDemo::load(
+        RENDER_WIDTH,
+        RENDER_HEIGHT,
+        DEFAULT_SCENE,
+    )));
 
     let (mut pixels, mut framework) = {
         let window_size = window.inner_size();

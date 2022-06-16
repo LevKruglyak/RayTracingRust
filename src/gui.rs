@@ -1,4 +1,5 @@
-use egui::{ClippedMesh, Context, TexturesDelta};
+use cgmath::Vector3;
+use egui::{ClippedMesh, Context, TexturesDelta, Ui};
 use egui_wgpu_backend::{BackendError, RenderPass, ScreenDescriptor};
 use pixels::{wgpu, PixelsContext};
 use ray_tracing_rust::render::RayTracingDemo;
@@ -125,15 +126,27 @@ struct Gui {
 impl Gui {
     /// Create a `Gui`.
     fn new(app: Rc<RefCell<RayTracingDemo>>) -> Self {
-        Self { app }
+        Self { app, }
+    }
+
+    fn point_ui(point: &mut Vector3<f32>, ui: &mut Ui) -> bool {
+        let mut result = false;
+        ui.horizontal(|ui| {
+            result |= ui.add(egui::widgets::DragValue::new(&mut point.x).speed(0.02).prefix("x: ")).changed();
+            result |= ui.add(egui::widgets::DragValue::new(&mut point.y).speed(0.02).prefix("y: ")).changed();
+            result |= ui.add(egui::widgets::DragValue::new(&mut point.z).speed(0.02).prefix("z: ")).changed();
+        });
+        return result;
     }
 
     /// Create the UI using egui.
     fn ui(&mut self, ctx: &Context) {
-        egui::Window::new("Render Settings")
+        egui::Window::new("Settings")
             .open(&mut true)
             .show(ctx, |ui| {
                 let mut app = self.app.borrow_mut();
+                let mut modified = false;
+
                 ui.label("Samples per pixel:");
                 ui.add(egui::Slider::new(
                     &mut app.scene.settings.samples_per_pixel,
@@ -145,15 +158,28 @@ impl Gui {
                     1..=50,
                 ));
 
-                ui.label("Field of view:");
-                ui.add(egui::Slider::new(
-                    &mut app.scene.camera.vertical_fov,
-                    0.60..=120.0,
-                ));
                 ui.add(egui::Checkbox::new(
                     &mut app.scene.settings.enable_multithreading,
                     "Enable multithreading",
                 ));
+                ui.add(egui::Checkbox::new(
+                    &mut app.continuous_mode,
+                    "Continuous mode",
+                ));
+
+                ui.separator();
+                ui.heading("Camera");
+                ui.label("Look from:");
+                modified |= Self::point_ui(&mut app.scene.camera.lookfrom, ui);
+                ui.label("Look at:");
+                modified |= Self::point_ui(&mut app.scene.camera.lookat, ui);
+                ui.label("Vertical:");
+                modified |= Self::point_ui(&mut app.scene.camera.vertical, ui);
+                ui.label("Field of view:");
+                modified |= ui.add(egui::Slider::new(
+                    &mut app.scene.camera.vertical_fov,
+                    0.60..=120.0,
+                )).changed();
 
                 ui.separator();
                 if ui.button("Render Image").clicked() {
@@ -162,6 +188,10 @@ impl Gui {
 
                 ui.label(format!("Last render took: {:?}", app.last_time));
                 ui.label(format!("Using {:?} threads", rayon::current_num_threads()));
+
+                if modified && app.continuous_mode {
+                    app.update();
+                }
             });
     }
 }

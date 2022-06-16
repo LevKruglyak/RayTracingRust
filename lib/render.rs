@@ -1,7 +1,7 @@
 use crate::color::Color;
 use crate::material::{Dielectric, Lambertian, Metal, MixMaterial};
 use crate::objects::Sphere;
-use crate::ray::{Hittable, Ray};
+use crate::ray::Ray;
 use crate::scene::Scene;
 use cgmath::Vector3;
 use rand::thread_rng;
@@ -14,29 +14,26 @@ pub struct RayTracingDemo {
     height: u32,
     pixels: Vec<Color>,
     pub needs_redraw: bool,
+    pub continuous_mode: bool,
     pub scene: Scene,
     pub last_time: Duration,
 }
 
 impl RayTracingDemo {
-    pub fn load(path: &str) -> Self {
+    pub fn load(width: u32, height: u32, path: &str) -> Self {
         let file_contents =
             std::fs::read_to_string(path).expect(&format!("failed to read file: {:?}", path)[..]);
-        RayTracingDemo::new(serde_json::from_str(&file_contents).unwrap())
+        RayTracingDemo::new(width, height, serde_json::from_str(&file_contents).unwrap())
     }
 
-    pub fn new(scene: Scene) -> Self {
-        let width = scene.settings.viewport_width;
-        let height = scene.settings.viewport_height;
-
-        let _aspect_ratio = width / height;
-
+    pub fn new(width: u32, height: u32, scene: Scene) -> Self {
         Self {
-            width: width as u32,
-            height: height as u32,
+            width,
+            height,
             pixels: vec![Color::new(1.0, 1.0, 1.0); (width * height) as usize],
             scene,
             needs_redraw: true,
+            continuous_mode: false,
             last_time: Duration::new(0, 0),
         }
     }

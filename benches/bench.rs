@@ -5,7 +5,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     let contents =
         std::fs::read_to_string("scenes/benchmark.json").expect("error: could not read file!");
     let scene = serde_json::from_str(&contents).unwrap();
-    let mut app = RayTracingDemo::new(scene);
+    let mut app = RayTracingDemo::new(100, 100, scene);
 
     c.bench_function("render", |b| b.iter(|| app.update()));
 }
