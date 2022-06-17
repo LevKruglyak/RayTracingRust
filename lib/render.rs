@@ -1,9 +1,9 @@
 use crate::color::Color;
-use crate::material::{Dielectric, Lambertian, Metal, MixMaterial};
+use crate::material::{Dielectric, Lambertian, Material, Metal, MixMaterial};
 use crate::objects::Sphere;
 use crate::ray::Ray;
-use crate::scene::Scene;
-use cgmath::Vector3;
+use crate::scene::{RenderMode, Scene};
+use cgmath::{InnerSpace, Vector3};
 use rand::thread_rng;
 use rand::{distributions::Uniform, prelude::Distribution};
 use rayon::prelude::*;
@@ -80,7 +80,17 @@ impl RayTracingDemo {
             //     return Color::new(normal.x, normal.y, normal.z);
             // }
 
-            let (attenuation, scattered) = scene.material(hit.material).scatter(ray, &hit);
+            let (attenuation, scattered) = match scene.settings.mode {
+                RenderMode::Full => scene.material(hit.material).scatter(ray, &hit),
+                RenderMode::Clay => Lambertian::new(Color::new(0.8, 0.8, 0.8)).scatter(ray, &hit),
+                RenderMode::Normal => {
+                    let normal = 0.5 * (hit.normal.normalize() + Vector3::new(1.0, 1.0, 1.0));
+                    return Color::new(normal.x, normal.y, normal.z);
+                }
+                RenderMode::Random => {
+                    return Color::new(0.0, 0.0, 0.0);
+                }
+            };
 
             if let Some(scattered) = scattered {
                 attenuation * Self::ray_color(scene, &scattered)

@@ -7,11 +7,11 @@ use crate::{
     sky::Background,
 };
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum RenderMode {
     Full,
     Clay,
-    Silhouette,
+    Random,
     Normal,
 }
 
