@@ -29,7 +29,7 @@ impl Framework {
         scale_factor: f32,
         pixels: &pixels::Pixels,
         app: Rc<RefCell<RayTracingDemo>>,
-        ) -> Self {
+    ) -> Self {
         let max_texture_size = pixels.device().limits().max_texture_dimension_2d as usize;
 
         let egui_ctx = Context::default();
@@ -93,7 +93,7 @@ impl Framework {
         encoder: &mut wgpu::CommandEncoder,
         render_target: &wgpu::TextureView,
         context: &PixelsContext,
-        ) -> Result<(), BackendError> {
+    ) -> Result<(), BackendError> {
         // Upload all resources to the GPU.
         self.rpass
             .add_textures(&context.device, &context.queue, &self.textures)?;
@@ -102,7 +102,7 @@ impl Framework {
             &context.queue,
             &self.paint_jobs,
             &self.screen_descriptor,
-            );
+        );
 
         // Record all render passes.
         self.rpass.execute(
@@ -111,7 +111,7 @@ impl Framework {
             &self.paint_jobs,
             &self.screen_descriptor,
             None,
-            )?;
+        )?;
 
         // Cleanup
         let textures = std::mem::take(&mut self.textures);
@@ -140,14 +140,14 @@ impl Gui {
 
                 ui.label("Samples per pixel:");
                 ui.add(egui::Slider::new(
-                        &mut app.scene.settings.samples_per_pixel,
-                        1..=1000,
-                        ));
+                    &mut app.scene.settings.samples_per_pixel,
+                    1..=1000,
+                ));
                 ui.label("Max ray depth:");
                 ui.add(egui::Slider::new(
-                        &mut app.scene.settings.max_ray_depth,
-                        1..=50,
-                        ));
+                    &mut app.scene.settings.max_ray_depth,
+                    1..=50,
+                ));
 
                 ui.horizontal(|ui| {
                     ui.label("Render mode:");
@@ -159,52 +159,52 @@ impl Gui {
                                     &mut app.scene.settings.mode,
                                     RenderMode::Full,
                                     "Full",
-                                    )
-                                    .clicked()
-                                    {
-                                        modified = true
-                                    };
+                                )
+                                .clicked()
+                            {
+                                modified = true
+                            };
                             if ui
                                 .selectable_value(
                                     &mut app.scene.settings.mode,
                                     RenderMode::Clay,
                                     "Clay",
-                                    )
-                                    .clicked()
-                                    {
-                                        modified = true
-                                    };
+                                )
+                                .clicked()
+                            {
+                                modified = true
+                            };
                             if ui
                                 .selectable_value(
                                     &mut app.scene.settings.mode,
                                     RenderMode::Normal,
                                     "Normal",
-                                    )
-                                    .clicked()
-                                    {
-                                        modified = true
-                                    };
+                                )
+                                .clicked()
+                            {
+                                modified = true
+                            };
                             if ui
                                 .selectable_value(
                                     &mut app.scene.settings.mode,
                                     RenderMode::Random,
                                     "Random",
-                                    )
-                                    .clicked()
-                                    {
-                                        modified = true
-                                    };
+                                )
+                                .clicked()
+                            {
+                                modified = true
+                            };
                         });
                 });
 
                 ui.add(egui::Checkbox::new(
-                        &mut app.scene.settings.enable_multithreading,
-                        "Enable multithreading",
-                        ));
+                    &mut app.scene.settings.enable_multithreading,
+                    "Enable multithreading",
+                ));
                 ui.add(egui::Checkbox::new(
-                        &mut app.continuous_mode,
-                        "Continuous mode",
-                        ));
+                    &mut app.continuous_mode,
+                    "Continuous mode",
+                ));
 
                 ui.separator();
                 ui.heading("Scene Settings");
@@ -224,9 +224,9 @@ impl Gui {
                             }
                             if ui.button("Gradient background").clicked() {
                                 app.scene.background = Box::new(GradientBackground::new(
-                                        Color::new(0.5, 0.7, 1.0),
-                                        Color::new(1.0, 1.0, 1.0),
-                                        ));
+                                    Color::new(0.5, 0.7, 1.0),
+                                    Color::new(1.0, 1.0, 1.0),
+                                ));
                                 ui.close_menu();
                                 modified = true;
                             }

@@ -3,7 +3,7 @@ use ray_tracing_rust::render::RayTracingDemo;
 
 fn criterion_benchmark(c: &mut Criterion) {
     let contents =
-        std::fs::read_to_string("scenes/simple.json").expect("error: could not read file!");
+        std::fs::read_to_string("scenes/benchmark.json").expect("error: could not read file!");
     let scene = serde_json::from_str(&contents).unwrap();
     let mut app = RayTracingDemo::new(100, 100, scene);
 

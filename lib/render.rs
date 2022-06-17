@@ -1,11 +1,11 @@
 use crate::color::Color;
-use crate::material::{Dielectric, Lambertian, Material, Metal, MixMaterial};
+use crate::material::{Dielectric, Emission, Lambertian, Material, Metal, MixMaterial};
 use crate::objects::Sphere;
 use crate::ray::Ray;
 use crate::scene::{RenderMode, Scene};
 use cgmath::{InnerSpace, Vector3};
-use rand::thread_rng;
 use rand::{distributions::Uniform, prelude::Distribution};
+use rand::{thread_rng, Rng};
 use rayon::prelude::*;
 use std::time::{Duration, Instant};
 
@@ -39,32 +39,82 @@ impl RayTracingDemo {
     }
 
     pub fn setup(&mut self) {
-        let mat_metal = Box::new(Metal::new(Color::new(1.0, 1.0, 1.0), 0.02));
-        let mat_diffuse = Box::new(Lambertian::new(Color::new(1.0, 0.2, 0.02)));
-        let mat_glass = self.scene.add_material(Box::new(Dielectric::new(1.5)));
-        let mat_sphere =
-            self.scene
-                .add_material(Box::new(MixMaterial::new(mat_metal, mat_diffuse, 0.9)));
+        // let mat_metal = Box::new(Metal::new(Color::new(1.0, 1.0, 1.0), 0.02));
+        // let mat_diffuse = Box::new(Lambertian::new(Color::new(1.0, 0.2, 0.02)));
+        // let mat_glass = self.scene.add_material(Box::new(Dielectric::new(1.5)));
+        // let mat_sphere =
+        //     self.scene
+        //         .add_material(Box::new(MixMaterial::new(mat_metal, mat_diffuse, 0.9)));
+        // let mat_ground = self
+        //     .scene
+        //     .add_material(Box::new(Lambertian::new(Color::new(0.2, 0.2, 0.2))));
+
+        // let ground_radius = 100.0;
+        // let _ground = self.scene.add_object(Box::new(Sphere::new(
+        //     Vector3::new(0.0, 0.0 - ground_radius, -1.0),
+        //     ground_radius,
+        //     mat_ground,
+        // )));
+        // let _glass = self.scene.add_object(Box::new(Sphere::new(
+        //     Vector3::new(0.0, 0.5, -1.0),
+        //     0.5,
+        //     mat_glass,
+        // )));
+        // let _small_ball = self.scene.add_object(Box::new(Sphere::new(
+        //     Vector3::new(-0.9, 0.2, -0.7),
+        //     0.2,
+        //     mat_sphere,
+        // )));
+        let mut rng = rand::thread_rng();
         let mat_ground = self
             .scene
             .add_material(Box::new(Lambertian::new(Color::new(0.2, 0.2, 0.2))));
 
-        let ground_radius = 100.0;
-        let _ground = self.scene.add_object(Box::new(Sphere::new(
-            Vector3::new(0.0, 0.0 - ground_radius, -1.0),
-            ground_radius,
+        for x in -5..5 {
+            for y in -5..5 {
+                let color = Color::new(
+                    rng.gen_range(0.1..1.0),
+                    rng.gen_range(0.1..1.0),
+                    rng.gen_range(0.1..1.0),
+                );
+                let material = if rng.gen_bool(0.3) {
+                    self.scene.add_material(Box::new(Lambertian::new(color)))
+                } else if rng.gen_bool(0.5) {
+                    self.scene
+                        .add_material(Box::new(Metal::new(color, rng.gen_range(0.0..0.2))))
+                } else if rng.gen_bool(0.6) {
+                    self.scene.add_material(Box::new(Dielectric::new(1.5)))
+                } else {
+                    self.scene
+                        .add_material(Box::new(Emission::new(color, 10.0)))
+                };
+
+                let radius = rng.gen_range(0.01..0.1);
+
+                self.scene.add_object(Box::new(Sphere::new(
+                    Vector3::new(0.2 * (x as f32), -0.5 + radius, -1.0 - 0.2 * (y as f32)),
+                    radius,
+                    material,
+                )));
+            }
+        }
+
+        let glossy = self
+            .scene
+            .add_material(Box::new(Metal::new(Color::new(0.7, 0.7, 0.7), 0.02)));
+
+        self.scene.add_object(Box::new(Sphere::new(
+            Vector3::new(0.0, -0.5 + 1.0, -2.5),
+            1.0,
+            glossy,
+        )));
+        self.scene.add_object(Box::new(Sphere::new(
+            Vector3::new(0.0, -100.5, -1.0),
+            100.0,
             mat_ground,
         )));
-        let _glass = self.scene.add_object(Box::new(Sphere::new(
-            Vector3::new(0.0, 0.5, -1.0),
-            0.5,
-            mat_glass,
-        )));
-        let _small_ball = self.scene.add_object(Box::new(Sphere::new(
-            Vector3::new(-0.9, 0.2, -0.7),
-            0.2,
-            mat_sphere,
-        )));
+
+        println!("{}", serde_json::to_string(&self.scene).unwrap());
     }
 
     pub fn ray_color(scene: &Scene, ray: &Ray) -> Color {
@@ -74,12 +124,6 @@ impl RayTracingDemo {
         }
 
         if let Some(hit) = scene.hit(ray, (0.01, f32::INFINITY)) {
-            // if self.render_normals {
-            //     // Normal emissive
-            //     let normal = 0.5 * (hit.normal.normalize() + Vector3::new(1.0, 1.0, 1.0));
-            //     return Color::new(normal.x, normal.y, normal.z);
-            // }
-
             let (attenuation, scattered) = match scene.settings.mode {
                 RenderMode::Full => scene.material(hit.material).scatter(ray, &hit),
                 RenderMode::Clay => Lambertian::new(Color::new(0.8, 0.8, 0.8)).scatter(ray, &hit),
