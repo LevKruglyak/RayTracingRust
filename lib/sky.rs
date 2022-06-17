@@ -1,17 +1,18 @@
 use cgmath::InnerSpace;
+use egui::Ui;
 use serde::{Deserialize, Serialize};
 use std::f32::consts::PI;
 
-use crate::{color::Color, ray::Ray, utils::to_spherical_coords};
+use crate::{color::Color, gui::Editable, ray::Ray, utils::to_spherical_coords};
 
 #[typetag::serde(tag = "type")]
-pub trait Background: Sync {
+pub trait Background: Sync + Editable {
     fn sample(&self, ray: &Ray) -> Color;
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct UniformBackground {
-    color: Color,
+    pub color: Color,
 }
 
 impl UniformBackground {
@@ -29,20 +30,20 @@ impl Background for UniformBackground {
 
 #[derive(Serialize, Deserialize)]
 pub struct GradientBackground {
-    up: Color,
-    down: Color,
+    pub top: Color,
+    pub bottom: Color,
 }
 
 impl GradientBackground {
-    pub fn new(up: Color, down: Color) -> Self {
-        Self { up, down }
+    pub fn new(top: Color, bottom: Color) -> Self {
+        Self { top, bottom }
     }
 }
 
 #[typetag::serde]
 impl Background for GradientBackground {
     fn sample(&self, ray: &Ray) -> Color {
-        ray.vertical_grad(self.up, self.down)
+        ray.vertical_grad(self.top, self.bottom)
     }
 }
 

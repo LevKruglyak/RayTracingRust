@@ -1,5 +1,6 @@
 pub mod camera;
 pub mod color;
+pub mod gui;
 pub mod material;
 pub mod objects;
 pub mod ray;

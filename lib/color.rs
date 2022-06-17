@@ -24,6 +24,11 @@ impl Color {
     }
 
     #[inline]
+    pub fn data(&self) -> [f32; 3] {
+        [self.r, self.g, self.b]
+    }
+
+    #[inline]
     pub fn into_raw(&self) -> [u8; 4] {
         [
             (self.r * 255.0) as u8,

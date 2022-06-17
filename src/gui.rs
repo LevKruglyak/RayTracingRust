@@ -2,7 +2,7 @@ use cgmath::Vector3;
 use egui::{ClippedMesh, Context, TexturesDelta, Ui};
 use egui_wgpu_backend::{BackendError, RenderPass, ScreenDescriptor};
 use pixels::{wgpu, PixelsContext};
-use ray_tracing_rust::render::RayTracingDemo;
+use ray_tracing_rust::{color::Color, gui::Editable, render::RayTracingDemo, sky::*};
 use std::{cell::RefCell, rc::Rc};
 use winit::window::Window;
 
@@ -126,17 +126,7 @@ struct Gui {
 impl Gui {
     /// Create a `Gui`.
     fn new(app: Rc<RefCell<RayTracingDemo>>) -> Self {
-        Self { app, }
-    }
-
-    fn point_ui(point: &mut Vector3<f32>, ui: &mut Ui) -> bool {
-        let mut result = false;
-        ui.horizontal(|ui| {
-            result |= ui.add(egui::widgets::DragValue::new(&mut point.x).speed(0.02).prefix("x: ")).changed();
-            result |= ui.add(egui::widgets::DragValue::new(&mut point.y).speed(0.02).prefix("y: ")).changed();
-            result |= ui.add(egui::widgets::DragValue::new(&mut point.z).speed(0.02).prefix("z: ")).changed();
-        });
-        return result;
+        Self { app }
     }
 
     /// Create the UI using egui.
@@ -168,18 +158,33 @@ impl Gui {
                 ));
 
                 ui.separator();
-                ui.heading("Camera");
-                ui.label("Look from:");
-                modified |= Self::point_ui(&mut app.scene.camera.lookfrom, ui);
-                ui.label("Look at:");
-                modified |= Self::point_ui(&mut app.scene.camera.lookat, ui);
-                ui.label("Vertical:");
-                modified |= Self::point_ui(&mut app.scene.camera.vertical, ui);
-                ui.label("Field of view:");
-                modified |= ui.add(egui::Slider::new(
-                    &mut app.scene.camera.vertical_fov,
-                    0.60..=120.0,
-                )).changed();
+                ui.heading("Scene Settings");
+                ui.collapsing("Camera", |ui| {
+                    app.scene.camera.display_ui(ui, &mut modified);
+                });
+
+                ui.collapsing("Background", |ui| {
+                    app.scene.background.display_ui(ui, &mut modified);
+                    ui.horizontal(|ui| {
+                        ui.menu_button("Change background", |ui| {
+                            if ui.button("Uniform background").clicked() {
+                                app.scene.background =
+                                    Box::new(UniformBackground::new(Color::new(0.8, 0.8, 0.8)));
+                                ui.close_menu();
+                                modified = true;
+                            }
+                            if ui.button("Gradient background").clicked() {
+                                app.scene.background = Box::new(GradientBackground::new(
+                                    Color::new(0.5, 0.7, 1.0),
+                                    Color::new(1.0, 1.0, 1.0),
+                                ));
+                                ui.close_menu();
+                                modified = true;
+                            }
+                            if ui.button("Sky map").clicked() {}
+                        });
+                    })
+                });
 
                 ui.separator();
                 if ui.button("Render Image").clicked() {
