@@ -14,7 +14,7 @@ use winit_input_helper::WinitInputHelper;
 
 mod gui;
 
-const DEFAULT_SCENE: &'static str = "scenes/simple.json";
+const DEFAULT_SCENE: &str = "scenes/simple.json";
 
 const RENDER_WIDTH: u32 = 500;
 const RENDER_HEIGHT: u32 = 500;

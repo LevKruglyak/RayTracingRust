@@ -1,4 +1,4 @@
-use egui::{ClippedMesh, ComboBox, Context, TexturesDelta, Ui};
+use egui::{ClippedMesh, ComboBox, Context, TexturesDelta};
 use egui_wgpu_backend::{BackendError, RenderPass, ScreenDescriptor};
 use pixels::{wgpu, PixelsContext};
 use ray_tracing_rust::{
