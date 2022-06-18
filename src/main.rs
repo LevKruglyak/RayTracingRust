@@ -1,122 +1,184 @@
 #![deny(clippy::all)]
 #![forbid(unsafe_code)]
 
-use crate::gui::Framework;
-use log::error;
-use pixels::{Error, Pixels, SurfaceTexture};
-use ray_tracing_rust::render::RayTracingDemo;
-use std::{cell::RefCell, rc::Rc};
-use winit::dpi::LogicalSize;
-use winit::event::Event;
-use winit::event_loop::{ControlFlow, EventLoop};
-use winit::window::WindowBuilder;
-use winit_input_helper::WinitInputHelper;
+use notan::egui::{self, *};
+use notan::prelude::*;
+use ray_tracing_rust::{render::*, scene::*, sky::*, color, gui::Editable};
 
-mod gui;
+#[derive(AppState)]
+struct State {
+    tex_id: egui::TextureId,
+    tex: Texture,
+    img_data: Vec<u8>,
+    img_size: egui::Vec2,
+    demo: RayTracingDemo,
+}
 
-const DEFAULT_SCENE: &str = "scenes/simple.json";
+static RENDER_WIDTH: i32 = 500;
+static RENDER_HEIGHT: i32 = 500;
 
-const RENDER_WIDTH: u32 = 1000;
-const RENDER_HEIGHT: u32 = 1000;
+impl State {
+    fn new(gfx: &mut Graphics) -> State {
+        let texture = gfx
+            .create_texture()
+            .with_size(RENDER_WIDTH, RENDER_HEIGHT)
+            .with_premultiplied_alpha()
+            .build()
+            .unwrap();
 
-const WINDOW_WIDTH: u32 = RENDER_WIDTH;
-const WINDOW_HEIGHT: u32 = RENDER_HEIGHT;
+        let img_size: egui::Vec2 = texture.size().into();
+        let tex_id = gfx.egui_register_texture(&texture);
 
-fn main() -> Result<(), Error> {
-    env_logger::init();
-    let event_loop = EventLoop::new();
-    let mut input = WinitInputHelper::new();
-    let window = {
-        let size = LogicalSize::new(WINDOW_WIDTH as f32, WINDOW_HEIGHT as f32);
-        WindowBuilder::new()
-            .with_title("Ray Tracing Demo")
-            .with_inner_size(size)
-            .with_min_inner_size(size)
-            .build(&event_loop)
-            .unwrap()
-    };
+        let mut demo = RayTracingDemo::load(RENDER_WIDTH as u32, RENDER_HEIGHT as u32, "scenes/simple.json");
+        let mut img_data = vec![255; (RENDER_WIDTH * RENDER_HEIGHT * 4) as usize];
+        demo.render(&mut img_data);
 
-    let app = Rc::new(RefCell::new(RayTracingDemo::load(
-        RENDER_WIDTH,
-        RENDER_HEIGHT,
-        DEFAULT_SCENE,
-    )));
-
-    let (mut pixels, mut framework) = {
-        let window_size = window.inner_size();
-        let scale_factor = window.scale_factor() as f32;
-        let surface_texture = SurfaceTexture::new(window_size.width, window_size.height, &window);
-        let pixels = Pixels::new(RENDER_WIDTH, RENDER_HEIGHT, surface_texture)?;
-        let framework = Framework::new(
-            window_size.width,
-            window_size.height,
-            scale_factor,
-            &pixels,
-            Rc::clone(&app),
-        );
-
-        (pixels, framework)
-    };
-
-    event_loop.run(move |event, _, control_flow| {
-        // Handle input events
-        if input.update(&event) {
-            // Close events
-            if input.quit() {
-                *control_flow = ControlFlow::Exit;
-                return;
-            }
-
-            // Update the scale factor
-            if let Some(scale_factor) = input.scale_factor() {
-                framework.scale_factor(scale_factor);
-            }
-
-            // Resize the window
-            if let Some(size) = input.window_resized() {
-                pixels.resize_surface(size.width, size.height);
-                framework.resize(size.width, size.height);
-            }
-
-            // Update internal state and request a redraw
-            window.request_redraw();
+        Self {
+            img_size,
+            tex: texture,
+            img_data,
+            tex_id,
+            demo,
         }
+    }
+}
 
-        match event {
-            Event::WindowEvent { event, .. } => {
-                // Update egui inputs
-                framework.handle_event(&event);
-            }
-            // Draw the current frame
-            Event::RedrawRequested(_) => {
-                // Draw the world
-                if app.borrow().needs_redraw {
-                    app.borrow_mut().draw(pixels.get_frame());
-                }
+#[notan_main]
+fn main() -> Result<(), String> {
+    notan::init_with(State::new)
+        .add_config(EguiConfig)
+        .draw(draw)
+        .build()
+}
 
-                // Prepare egui
-                framework.prepare(&window);
+fn draw(gfx: &mut Graphics, plugins: &mut Plugins, state: &mut State) {
+    let mut output = plugins.egui(|ctx| {
+        egui::Window::new("Render Output").show(ctx, |ui| {
+            ui.image(state.tex_id, state.img_size);
+        });
 
-                // Render everything together
-                let render_result = pixels.render_with(|encoder, render_target, context| {
-                    // Render the world texture
-                    context.scaling_renderer.render(encoder, render_target);
+        egui::SidePanel::left("Settings").show(ctx, |ui| {
+                let app = &mut state.demo;
+                let mut modified = false;
 
-                    // Render egui
-                    framework.render(encoder, render_target, context)?;
+                ui.label("Samples per pixel:");
+                ui.add(egui::Slider::new(
+                    &mut app.scene.settings.samples_per_pixel,
+                    1..=1000,
+                ));
+                ui.label("Max ray depth:");
+                ui.add(egui::Slider::new(
+                    &mut app.scene.settings.max_ray_depth,
+                    1..=50,
+                ));
 
-                    Ok(())
+                ui.horizontal(|ui| {
+                    ui.label("Render mode:");
+                    ComboBox::from_label("")
+                        .selected_text(format!("{:?}", app.scene.settings.mode))
+                        .show_ui(ui, |ui| {
+                            if ui
+                                .selectable_value(
+                                    &mut app.scene.settings.mode,
+                                    RenderMode::Full,
+                                    "Full",
+                                )
+                                .clicked()
+                            {
+                                modified = true
+                            };
+                            if ui
+                                .selectable_value(
+                                    &mut app.scene.settings.mode,
+                                    RenderMode::Clay,
+                                    "Clay",
+                                )
+                                .clicked()
+                            {
+                                modified = true
+                            };
+                            if ui
+                                .selectable_value(
+                                    &mut app.scene.settings.mode,
+                                    RenderMode::Normal,
+                                    "Normal",
+                                )
+                                .clicked()
+                            {
+                                modified = true
+                            };
+                            if ui
+                                .selectable_value(
+                                    &mut app.scene.settings.mode,
+                                    RenderMode::Random,
+                                    "Random",
+                                )
+                                .clicked()
+                            {
+                                modified = true
+                            };
+                        });
                 });
 
-                // Basic error handling
-                if render_result
-                    .map_err(|e| error!("pixels.render() failed: {}", e))
-                    .is_err()
-                {
-                    *control_flow = ControlFlow::Exit;
+                ui.add(egui::Checkbox::new(
+                    &mut app.scene.settings.enable_multithreading,
+                    "Enable multithreading",
+                ));
+                ui.add(egui::Checkbox::new(
+                    &mut app.continuous_mode,
+                    "Continuous mode",
+                ));
+
+                ui.separator();
+                ui.heading("Scene Settings");
+                ui.collapsing("Camera", |ui| {
+                    app.scene.camera.display_ui(ui, &mut modified);
+                });
+
+                ui.collapsing("Background", |ui| {
+                    app.scene.background.display_ui(ui, &mut modified);
+                    ui.horizontal(|ui| {
+                        ui.menu_button("Change background", |ui| {
+                            if ui.button("Uniform background").clicked() {
+                                app.scene.background =
+                                    Box::new(UniformBackground::new(color::Color::new(0.8, 0.8, 0.8)));
+                                ui.close_menu();
+                                modified = true;
+                            }
+                            if ui.button("Gradient background").clicked() {
+                                app.scene.background = Box::new(GradientBackground::new(
+                                    color::Color::new(0.5, 0.7, 1.0),
+                                    color::Color::new(1.0, 1.0, 1.0),
+                                ));
+                                ui.close_menu();
+                                modified = true;
+                            }
+                            if ui.button("Sky map").clicked() {}
+                        });
+                    })
+                });
+
+                ui.separator();
+                if ui.button("Render Image").clicked() {
+                    app.render(&mut state.img_data);
                 }
-            }
-            _ => (),
-        }
+
+                ui.label(format!("Last render took: {:?}", app.last_time));
+                ui.label(format!("Using {:?} threads", rayon::current_num_threads()));
+
+                if modified && app.continuous_mode {
+                    app.render(&mut state.img_data);
+                }
+            });
     });
+
+    output.clear_color(Color::BLACK);
+
+    if output.needs_repaint() {
+        gfx.render(&output);
+        gfx.update_texture(&mut state.tex)
+            .with_data(&state.img_data[..])
+            .update()
+            .unwrap();
+    }
 }

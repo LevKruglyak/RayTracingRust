@@ -4,7 +4,7 @@ use crate::{
     sky::{GradientBackground, SkyMap},
 };
 use cgmath::Vector3;
-use egui::{InnerResponse, Ui};
+use notan::egui::{self, *};
 
 use crate::sky::UniformBackground;
 

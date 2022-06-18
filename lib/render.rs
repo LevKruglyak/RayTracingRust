@@ -12,7 +12,6 @@ use std::time::{Duration, Instant};
 pub struct RayTracingDemo {
     width: u32,
     height: u32,
-    pixels: Vec<Color>,
     pub needs_redraw: bool,
     pub continuous_mode: bool,
     pub scene: Scene,
@@ -30,7 +29,6 @@ impl RayTracingDemo {
         Self {
             width,
             height,
-            pixels: vec![Color::new(1.0, 1.0, 1.0); (width * height) as usize],
             scene,
             needs_redraw: true,
             continuous_mode: false,
@@ -146,7 +144,7 @@ impl RayTracingDemo {
         }
     }
 
-    pub fn update(&mut self) {
+    pub fn render(&mut self, pixels: &mut Vec<u8>) {
         let current = Instant::now();
 
         // Build up the scene
@@ -154,11 +152,11 @@ impl RayTracingDemo {
         let range = Uniform::from(0.0..1.0);
 
         // Closure to do computationally heavy task
-        let calculate_pixel = |(index, pixel): (usize, &mut Color)| {
+        let calculate_pixel = |(index, pixel): (usize, &mut [u8])| {
             let x = index % (self.width as usize);
             let y = index / (self.width as usize);
 
-            *pixel = Color::new(0.0, 0.0, 0.0);
+            let mut color = Color::new(0.0, 0.0, 0.0);
             let mut rng = thread_rng();
 
             for _ in 0..self.scene.settings.samples_per_pixel {
@@ -168,37 +166,42 @@ impl RayTracingDemo {
 
                 // Cast a ray
                 let ray = ray_origin.get_ray(u, v);
-                *pixel = *pixel + Self::ray_color(&self.scene, &ray);
+                color = color + Self::ray_color(&self.scene, &ray);
             }
 
             // Gamma correction
-            *pixel = Color {
-                r: (pixel.r / self.scene.settings.samples_per_pixel as f32).sqrt(),
-                g: (pixel.g / self.scene.settings.samples_per_pixel as f32).sqrt(),
-                b: (pixel.b / self.scene.settings.samples_per_pixel as f32).sqrt(),
-            }
+            color = Color {
+                r: (color.r / self.scene.settings.samples_per_pixel as f32).sqrt(),
+                g: (color.g / self.scene.settings.samples_per_pixel as f32).sqrt(),
+                b: (color.b / self.scene.settings.samples_per_pixel as f32).sqrt(),
+            };
+
+            pixel.copy_from_slice(&color.into_raw()[..]);
         };
 
         if self.scene.settings.enable_multithreading {
-            self.pixels
-                .par_iter_mut()
+            pixels
+                .par_chunks_exact_mut(4)
                 .enumerate()
                 .for_each(calculate_pixel);
         } else {
-            self.pixels.iter_mut().enumerate().for_each(calculate_pixel);
+            pixels
+                .chunks_exact_mut(4)
+                .enumerate()
+                .for_each(calculate_pixel);
         }
 
         self.last_time = current.elapsed();
         self.needs_redraw = true;
     }
 
-    pub fn draw(&mut self, frame: &mut [u8]) {
-        self.needs_redraw = false;
+    // pub fn draw(&mut self, frame: &mut [u8]) {
+    //     self.needs_redraw = false;
 
-        assert_eq!(self.pixels.len() * 4, frame.len());
-        for (pixel, result) in self.pixels.iter().zip(frame.chunks_exact_mut(4)) {
-            let pixel: [u8; 4] = pixel.into_raw();
-            result.copy_from_slice(&pixel);
-        }
-    }
+    //     assert_eq!(self.pixels.len() * 4, frame.len());
+    //     for (pixel, result) in self.pixels.iter().zip(frame.chunks_exact_mut(4)) {
+    //         let pixel: [u8; 4] = pixel.into_raw();
+    //         result.copy_from_slice(&pixel);
+    //     }
+    // }
 }
