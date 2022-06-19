@@ -1,9 +1,10 @@
+use crate::utils::ray::Ray;
 use serde::{Deserialize, Serialize};
 
 use crate::{
     camera::Camera,
     material::Material,
-    ray::{HitRecord, Hittable, Ray},
+    ray::{HitRecord, Hittable},
     sky::Background,
 };
 
@@ -73,14 +74,16 @@ impl Scene {
         &self.materials[material.0]
     }
 
-    pub fn hit(&self, ray: &Ray, limits: (f32, f32)) -> Option<HitRecord> {
+    pub fn hit(&self, ray: &Ray, tmin: f32, tmax: f32) -> Option<HitRecord> {
         let mut result = None;
         let mut closest_so_far = f32::INFINITY;
 
         for object in &self.objects {
-            if let Some(hit) = object.hit(ray, (limits.0, closest_so_far)) {
-                closest_so_far = hit.t;
-                result = Some(hit);
+            if object.bounds().hit(ray, tmin, tmax) {
+                if let Some(hit) = object.hit(ray, tmin, closest_so_far) {
+                    closest_so_far = hit.t;
+                    result = Some(hit);
+                }
             }
         }
 

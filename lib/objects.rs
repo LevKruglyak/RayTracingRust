@@ -1,21 +1,26 @@
 use crate::{
-    ray::{HitRecord, Hittable, Ray},
+    ray::{HitRecord, Hittable},
     scene::MaterialHandle,
+    utils::{
+        aabb::{Bounded, AABB},
+        ray::Ray,
+        types::*,
+    },
 };
-use cgmath::{InnerSpace, Vector3};
+use cgmath::InnerSpace;
 use derive_new::new;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, new)]
 pub struct Sphere {
-    center: Vector3<f32>,
-    radius: f32,
+    center: Vec3,
+    radius: Float,
     material: MaterialHandle,
 }
 
 #[typetag::serde]
 impl Hittable for Sphere {
-    fn hit(&self, ray: &Ray, limits: (f32, f32)) -> Option<HitRecord> {
+    fn hit(&self, ray: &Ray, tmin: Float, tmax: Float) -> Option<HitRecord> {
         let oc = ray.origin - self.center;
 
         let a = ray.direction.magnitude2();
@@ -31,9 +36,9 @@ impl Hittable for Sphere {
 
         // Find the nearest root that lies in an acceptable range
         let mut root = (-half_b - sqrtd) / a;
-        if root < limits.0 || limits.1 < root {
+        if root < tmin || tmax < root {
             root = (-half_b + sqrtd) / a;
-            if root < limits.0 || limits.1 < root {
+            if root < tmin || tmax < root {
                 return None;
             }
         }
@@ -42,5 +47,14 @@ impl Hittable for Sphere {
         let normal = (point - self.center) / self.radius;
 
         Some(HitRecord::new(point, normal, root, ray, self.material))
+    }
+}
+
+impl Bounded for Sphere {
+    fn bounds(&self) -> AABB {
+        AABB {
+            min: self.center - Vec3::new(self.radius, self.radius, self.radius),
+            max: self.center + Vec3::new(self.radius, self.radius, self.radius),
+        }
     }
 }

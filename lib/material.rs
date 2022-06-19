@@ -2,15 +2,17 @@ use crate::{
     color::Color,
     utils::{
         math::{near_zero, reflect, refract},
-        sample::{sample_unit_sphere_surface, UnitSphereSurfaceSampler},
+        ray::Ray,
+        sample::sample_unit_sphere_surface,
+        types::Float,
     },
 };
 use cgmath::InnerSpace;
 use derive_new::new;
-use rand::{distributions::uniform::SampleRange, thread_rng, Rng};
+use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 
-use crate::ray::{HitRecord, Ray};
+use crate::ray::HitRecord;
 
 #[typetag::serde(tag = "type")]
 pub trait Material: Sync {
@@ -30,7 +32,7 @@ impl Lambertian {
 
 #[typetag::serde]
 impl Material for Lambertian {
-    fn scatter(&self, ray: &Ray, hit: &HitRecord) -> (Color, Option<Ray>) {
+    fn scatter(&self, _ray: &Ray, hit: &HitRecord) -> (Color, Option<Ray>) {
         let mut scatter_direction = hit.normal + sample_unit_sphere_surface();
 
         if near_zero(scatter_direction) {
@@ -38,7 +40,7 @@ impl Material for Lambertian {
             scatter_direction = hit.normal;
         }
 
-        let scattered = Ray::new(hit.point, scatter_direction, ray.depth + 1);
+        let scattered = Ray::new(hit.point, scatter_direction);
         (self.albedo, Some(scattered))
     }
 }
@@ -46,11 +48,11 @@ impl Material for Lambertian {
 #[derive(Serialize, Deserialize)]
 pub struct Metal {
     albedo: Color,
-    fuzz: f32,
+    fuzz: Float,
 }
 
 impl Metal {
-    pub fn new(albedo: Color, fuzz: f32) -> Self {
+    pub fn new(albedo: Color, fuzz: Float) -> Self {
         Self { albedo, fuzz }
     }
 }
@@ -62,7 +64,6 @@ impl Material for Metal {
         let scattered = Ray::new(
             hit.point,
             reflected + self.fuzz * sample_unit_sphere_surface(),
-            ray.depth + 1,
         );
 
         if scattered.direction.dot(hit.normal) > 0.0 {
@@ -79,7 +80,7 @@ pub struct Emission {
 }
 
 impl Emission {
-    pub fn new(color: Color, strength: f32) -> Self {
+    pub fn new(color: Color, strength: Float) -> Self {
         Self {
             color: color * strength,
         }
@@ -95,19 +96,19 @@ impl Material for Emission {
 
 #[derive(Serialize, Deserialize)]
 pub struct Dielectric {
-    ir: f32,
+    ir: Float,
 }
 
 impl Dielectric {
-    pub fn new(ir: f32) -> Self {
+    pub fn new(ir: Float) -> Self {
         Self { ir }
     }
 
-    fn reflectance(cosine: f32, idx: f32) -> f32 {
+    fn reflectance(cosine: Float, idx: Float) -> Float {
         // Schlick's approximation for reflectance
         let mut r0 = (1.0 - idx) / (1.0 + idx);
         r0 = r0 * r0;
-        r0 + (1.0 - r0) * f32::powi(1.0 - cosine, 5)
+        r0 + (1.0 - r0) * Float::powi(1.0 - cosine, 5)
     }
 }
 
@@ -121,7 +122,7 @@ impl Material for Dielectric {
         };
 
         let unit_direction = ray.direction.normalize();
-        let cos_theta = f32::min(hit.normal.dot(-unit_direction), 1.0);
+        let cos_theta = Float::min(hit.normal.dot(-unit_direction), 1.0);
         let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
 
         let cannot_refract: bool = (refraction_ratio * sin_theta) > 1.0;
@@ -136,7 +137,7 @@ impl Material for Dielectric {
 
         (
             Color::new(1.0, 1.0, 1.0),
-            Some(Ray::new(hit.point, direction, ray.depth + 1)),
+            Some(Ray::new(hit.point, direction)),
         )
     }
 }
@@ -145,7 +146,7 @@ impl Material for Dielectric {
 pub struct MixMaterial {
     first: Box<dyn Material>,
     second: Box<dyn Material>,
-    factor: f32,
+    factor: Float,
 }
 
 #[typetag::serde]

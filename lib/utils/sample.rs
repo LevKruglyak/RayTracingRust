@@ -5,8 +5,8 @@ use derive_new::new;
 use rand::{distributions::uniform::SampleRange, thread_rng, Rng};
 
 use super::{
-    aabb::AABB,
-    shapes::{Shape, Sphere},
+    aabb::{Bounded, AABB},
+    shapes::Sphere,
     types::*,
 };
 

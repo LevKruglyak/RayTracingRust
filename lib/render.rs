@@ -1,9 +1,8 @@
 use crate::color::Color;
-use crate::material::{Dielectric, Emission, Lambertian, Material, Metal, MixMaterial};
+use crate::material::{Dielectric, Emission, Lambertian, Material, Metal};
 use crate::objects::Sphere;
-use crate::ray::Ray;
 use crate::scene::{RenderMode, Scene};
-use cgmath::{InnerSpace, Vector3};
+use crate::utils::{ray::Ray, types::*};
 use rand::{distributions::Uniform, prelude::Distribution};
 use rand::{thread_rng, Rng};
 use rayon::prelude::*;
@@ -51,17 +50,17 @@ impl RayTracingDemo {
 
         // let ground_radius = 100.0;
         // let _ground = self.scene.add_object(Box::new(Sphere::new(
-        //     Vector3::new(0.0, 0.0 - ground_radius, -1.0),
+        //     Vec3::new(0.0, 0.0 - ground_radius, -1.0),
         //     ground_radius,
         //     mat_ground,
         // )));
         // let _glass = self.scene.add_object(Box::new(Sphere::new(
-        //     Vector3::new(0.0, 0.5, -1.0),
+        //     Vec3::new(0.0, 0.5, -1.0),
         //     0.5,
         //     mat_glass,
         // )));
         // let _small_ball = self.scene.add_object(Box::new(Sphere::new(
-        //     Vector3::new(-0.9, 0.2, -0.7),
+        //     Vec3::new(-0.9, 0.2, -0.7),
         //     0.2,
         //     mat_sphere,
         // )));
@@ -92,7 +91,7 @@ impl RayTracingDemo {
                 let radius = rng.gen_range(0.01..0.1);
 
                 self.scene.add_object(Box::new(Sphere::new(
-                    Vector3::new(0.2 * (x as f32), -0.5 + radius, -1.0 - 0.2 * (y as f32)),
+                    Vec3::new(0.2 * (x as Float), -0.5 + radius, -1.0 - 0.2 * (y as Float)),
                     radius,
                     material,
                 )));
@@ -104,12 +103,12 @@ impl RayTracingDemo {
             .add_material(Box::new(Metal::new(Color::new(0.7, 0.7, 0.7), 0.02)));
 
         self.scene.add_object(Box::new(Sphere::new(
-            Vector3::new(0.0, -0.5 + 1.0, -2.5),
+            Vec3::new(0.0, -0.5 + 1.0, -2.5),
             1.0,
             glossy,
         )));
         self.scene.add_object(Box::new(Sphere::new(
-            Vector3::new(0.0, -100.5, -1.0),
+            Vec3::new(0.0, -100.5, -1.0),
             100.0,
             mat_ground,
         )));
@@ -117,19 +116,20 @@ impl RayTracingDemo {
         println!("{}", serde_json::to_string(&self.scene).unwrap());
     }
 
-    pub fn ray_color(scene: &Scene, ray: &Ray) -> Color {
+    pub fn ray_color(scene: &Scene, ray: &Ray, depth: u8) -> Color {
         // Base condition
-        if ray.depth >= scene.settings.max_ray_depth {
+        if depth >= scene.settings.max_ray_depth {
             return Color::new(0.0, 0.0, 0.0);
         }
 
-        if let Some(hit) = scene.hit(ray, (0.01, f32::INFINITY)) {
+        if let Some(hit) = scene.hit(ray, 0.001, Float::INFINITY) {
             let (attenuation, scattered) = match scene.settings.mode {
                 RenderMode::Full => scene.material(hit.material).scatter(ray, &hit),
                 RenderMode::Clay => Lambertian::new(Color::new(0.8, 0.8, 0.8)).scatter(ray, &hit),
                 RenderMode::Normal => {
-                    let normal = 0.5 * (hit.normal.normalize() + Vector3::new(1.0, 1.0, 1.0));
-                    return Color::new(normal.x, normal.y, normal.z);
+                    // let normal = 0.5 * (hit.normal.normalize() + Vec3::new(1.0, 1.0, 1.0));
+                    // return Color::new(normal.x, normal.y, normal.z);
+                    return Color::new(0.0, 0.0, 0.0);
                 }
                 RenderMode::Random => {
                     return Color::new(0.0, 0.0, 0.0);
@@ -137,7 +137,7 @@ impl RayTracingDemo {
             };
 
             if let Some(scattered) = scattered {
-                attenuation * Self::ray_color(scene, &scattered)
+                attenuation * Self::ray_color(scene, &scattered, depth + 1)
             } else {
                 attenuation
             }
@@ -163,19 +163,19 @@ impl RayTracingDemo {
 
             for _ in 0..self.scene.settings.samples_per_pixel {
                 // UV coordinates
-                let u = (x as f32 + range.sample(&mut rng)) / (self.width - 1) as f32;
-                let v = (y as f32 + range.sample(&mut rng)) / (self.height - 1) as f32;
+                let u = (x as Float + range.sample(&mut rng)) / (self.width - 1) as Float;
+                let v = (y as Float + range.sample(&mut rng)) / (self.height - 1) as Float;
 
                 // Cast a ray
                 let ray = ray_origin.get_ray(u, v);
-                *pixel = *pixel + Self::ray_color(&self.scene, &ray);
+                *pixel = *pixel + Self::ray_color(&self.scene, &ray, 0);
             }
 
             // Gamma correction
             *pixel = Color {
-                r: (pixel.r / self.scene.settings.samples_per_pixel as f32).sqrt(),
-                g: (pixel.g / self.scene.settings.samples_per_pixel as f32).sqrt(),
-                b: (pixel.b / self.scene.settings.samples_per_pixel as f32).sqrt(),
+                r: (pixel.r / self.scene.settings.samples_per_pixel as Float).sqrt(),
+                g: (pixel.g / self.scene.settings.samples_per_pixel as Float).sqrt(),
+                b: (pixel.b / self.scene.settings.samples_per_pixel as Float).sqrt(),
             }
         };
 

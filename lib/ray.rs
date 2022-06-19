@@ -1,41 +1,28 @@
-use cgmath::{InnerSpace, Vector3};
-use derive_new::new;
-use std::ops::{Add, Mul};
+use cgmath::InnerSpace;
 
-use crate::scene::MaterialHandle;
-
-#[derive(new)]
-pub struct Ray {
-    pub origin: Vector3<f32>,
-    pub direction: Vector3<f32>,
-    pub depth: u8,
-}
-
-impl Ray {
-    pub fn at(&self, t: f32) -> Vector3<f32> {
-        self.origin + self.direction * t
-    }
-
-    pub fn vertical_grad<T: Add<Output = T> + Mul<f32, Output = T>>(&self, top: T, bottom: T) -> T {
-        let t = 0.5 * (self.direction.normalize().y + 1.0);
-        top * (1.0 - t) + bottom * t
-    }
-}
+use crate::{
+    scene::MaterialHandle,
+    utils::{
+        aabb::Bounded,
+        ray::Ray,
+        types::{Float, Vec3},
+    },
+};
 
 #[derive(Clone)]
 pub struct HitRecord {
-    pub point: Vector3<f32>,
-    pub normal: Vector3<f32>,
-    pub t: f32,
+    pub point: Vec3,
+    pub normal: Vec3,
+    pub t: Float,
     pub front_face: bool,
     pub material: MaterialHandle,
 }
 
 impl HitRecord {
     pub fn new(
-        point: Vector3<f32>,
-        outward_normal: Vector3<f32>,
-        t: f32,
+        point: Vec3,
+        outward_normal: Vec3,
+        t: Float,
         ray: &Ray,
         material: MaterialHandle,
     ) -> Self {
@@ -57,6 +44,6 @@ impl HitRecord {
 }
 
 #[typetag::serde(tag = "type")]
-pub trait Hittable: Sync {
-    fn hit(&self, ray: &Ray, limits: (f32, f32)) -> Option<HitRecord>;
+pub trait Hittable: Sync + Bounded {
+    fn hit(&self, ray: &Ray, tmin: Float, tmax: Float) -> Option<HitRecord>;
 }

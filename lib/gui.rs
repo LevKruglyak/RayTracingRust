@@ -2,8 +2,8 @@ use crate::{
     camera::Camera,
     color::Color,
     sky::{GradientBackground, SkyMap},
+    utils::types::Vec3,
 };
-use cgmath::Vector3;
 use egui::{InnerResponse, Ui};
 
 use crate::sky::UniformBackground;
@@ -14,7 +14,7 @@ pub trait Editable {
     }
 }
 
-impl Editable for Vector3<f32> {
+impl Editable for Vec3 {
     fn display_ui(&mut self, ui: &mut Ui, modified: &mut bool) -> InnerResponse<()> {
         ui.horizontal(|ui| {
             *modified |= ui

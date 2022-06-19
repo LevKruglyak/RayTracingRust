@@ -2,7 +2,11 @@ use cgmath::InnerSpace;
 use serde::{Deserialize, Serialize};
 use std::f32::consts::PI;
 
-use crate::{color::Color, gui::Editable, ray::Ray, utils::math::to_spherical_coords};
+use crate::{
+    color::Color,
+    gui::Editable,
+    utils::{math::to_spherical_coords, ray::Ray},
+};
 
 #[typetag::serde(tag = "type")]
 pub trait Background: Sync + Editable {

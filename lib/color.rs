@@ -1,21 +1,23 @@
 use serde::{Deserialize, Serialize};
 use std::ops::{Add, Mul};
 
+use crate::utils::types::Float;
+
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct Color {
-    pub r: f32,
-    pub g: f32,
-    pub b: f32,
+    pub r: Float,
+    pub g: Float,
+    pub b: Float,
 }
 
 impl Color {
     #[inline]
-    pub fn new(r: f32, g: f32, b: f32) -> Self {
+    pub fn new(r: Float, g: Float, b: Float) -> Self {
         Self { r, g, b }
     }
 
     #[inline]
-    pub fn from(data: [f32; 3]) -> Self {
+    pub fn from(data: [Float; 3]) -> Self {
         Self {
             r: data[0],
             g: data[1],
@@ -24,7 +26,7 @@ impl Color {
     }
 
     #[inline]
-    pub fn data(&self) -> [f32; 3] {
+    pub fn data(&self) -> [Float; 3] {
         [self.r, self.g, self.b]
     }
 
@@ -45,9 +47,9 @@ impl Default for Color {
     }
 }
 
-impl Mul<f32> for Color {
+impl Mul<Float> for Color {
     type Output = Self;
-    fn mul(self, rhs: f32) -> Self::Output {
+    fn mul(self, rhs: Float) -> Self::Output {
         Self {
             r: self.r * rhs,
             b: self.b * rhs,

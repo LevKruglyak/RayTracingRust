@@ -1,12 +1,7 @@
 use super::{
-    aabb::AABB,
+    aabb::{Bounded, AABB},
     types::{Float, Vec3},
 };
-
-pub trait Shape {
-    /// Return bounds of the shape
-    fn bounds(&self) -> AABB;
-}
 
 pub struct Sphere {
     pub center: Vec3,
@@ -26,7 +21,7 @@ impl Sphere {
     }
 }
 
-impl Shape for Sphere {
+impl Bounded for Sphere {
     fn bounds(&self) -> AABB {
         AABB {
             min: self.center - Vec3::new(self.radius, self.radius, self.radius),
