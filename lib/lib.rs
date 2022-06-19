@@ -8,3 +8,5 @@ pub mod render;
 pub mod scene;
 pub mod sky;
 pub mod utils;
+
+pub mod math;
