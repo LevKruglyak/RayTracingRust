@@ -1,11 +1,14 @@
 use cgmath::InnerSpace;
 use serde::{Deserialize, Serialize};
-use std::f32::consts::PI;
 
 use crate::{
     color::Color,
     gui::Editable,
-    utils::{math::to_spherical_coords, ray::Ray},
+    utils::{
+        math::to_spherical_coords,
+        ray::Ray,
+        types::{Float, PI},
+    },
 };
 
 #[typetag::serde(tag = "type")]
@@ -67,7 +70,8 @@ impl SkyMap {
                 height: resolution.height(),
             },
             |skymap: &mut Self, position, (r, g, b, _): (f32, f32, f32, f32)| {
-                skymap.image[position.x() + position.y() * skymap.width] = Color::new(r, g, b);
+                skymap.image[position.x() + position.y() * skymap.width] =
+                    Color::new(r as Float, g as Float, b as Float);
             },
         )
         .expect("could not read image!");
@@ -82,8 +86,8 @@ impl Background for SkyMap {
         let spherical_coords = to_spherical_coords(ray.direction.normalize());
         let u = spherical_coords.x / PI;
         let v = spherical_coords.y / (2.0 * PI);
-        let x = (v * self.width as f32) as usize % self.width;
-        let y = self.height - (u * self.height as f32) as usize % self.height;
+        let x = (v * self.width as Float) as usize % self.width;
+        let y = self.height - (u * self.height as Float) as usize % self.height;
         self.image[x + y * self.width]
     }
 }

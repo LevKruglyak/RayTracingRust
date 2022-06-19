@@ -1,4 +1,4 @@
-use crate::utils::ray::Ray;
+use crate::utils::{ray::Ray, types::Float};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -74,9 +74,9 @@ impl Scene {
         &self.materials[material.0]
     }
 
-    pub fn hit(&self, ray: &Ray, tmin: f32, tmax: f32) -> Option<HitRecord> {
+    pub fn hit(&self, ray: &Ray, tmin: Float, tmax: Float) -> Option<HitRecord> {
         let mut result = None;
-        let mut closest_so_far = f32::INFINITY;
+        let mut closest_so_far = tmax;
 
         for object in &self.objects {
             if object.bounds().hit(ray, tmin, tmax) {

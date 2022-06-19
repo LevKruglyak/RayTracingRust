@@ -16,7 +16,11 @@ impl Ray {
         self.origin + self.direction * t
     }
 
-    pub fn vertical_grad<T: Add<Output = T> + Mul<f32, Output = T>>(&self, top: T, bottom: T) -> T {
+    pub fn vertical_grad<T: Add<Output = T> + Mul<Float, Output = T>>(
+        &self,
+        top: T,
+        bottom: T,
+    ) -> T {
         let t = 0.5 * (self.direction.normalize().y + 1.0);
         top * (1.0 - t) + bottom * t
     }
