@@ -1,3 +1,5 @@
+#![feature(trait_upcasting)]
+
 pub mod camera;
 pub mod color;
 pub mod gui;

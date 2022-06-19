@@ -202,6 +202,10 @@ impl Gui {
                     "Enable multithreading",
                 ));
                 ui.add(egui::Checkbox::new(
+                    &mut app.scene.settings.enable_bvh_tree,
+                    "Enable Bvh tree",
+                ));
+                ui.add(egui::Checkbox::new(
                     &mut app.continuous_mode,
                     "Continuous mode",
                 ));

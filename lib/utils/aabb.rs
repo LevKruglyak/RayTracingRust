@@ -17,6 +17,23 @@ impl AABB {
         self.min.x <= self.max.x && self.min.y <= self.max.y && self.min.z <= self.max.z
     }
 
+    /// Returns a bounding box surrouding two bounding boxes
+    pub fn surround(first: Self, second: Self) -> Self {
+        Self {
+            min: Vec3::new(
+                first.min.x.min(second.min.x),
+                first.min.y.min(second.min.y),
+                first.min.z.min(second.min.z),
+            ),
+            max: Vec3::new(
+                first.max.x.max(second.max.x),
+                first.max.y.max(second.max.y),
+                first.max.z.max(second.max.z),
+            ),
+        }
+    }
+
+    /// Returns true if the ray hits the bounding box
     pub fn hit(&self, ray: &Ray, tmin: Float, tmax: Float) -> bool {
         let mut tmin = tmin;
         let mut tmax = tmax;
@@ -73,5 +90,14 @@ impl AABB {
         }
 
         true
+    }
+}
+
+impl Default for AABB {
+    fn default() -> Self {
+        Self {
+            min: Vec3::new(0.0, 0.0, 0.0),
+            max: Vec3::new(0.0, 0.0, 0.0),
+        }
     }
 }

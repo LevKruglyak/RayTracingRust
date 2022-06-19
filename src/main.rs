@@ -16,11 +16,13 @@ mod gui;
 
 const DEFAULT_SCENE: &str = "scenes/simple.json";
 
-const RENDER_WIDTH: u32 = 250;
-const RENDER_HEIGHT: u32 = 250;
+const SCALE_DOWN: u32 = 4;
 
-const WINDOW_WIDTH: u32 = 4 * RENDER_WIDTH;
-const WINDOW_HEIGHT: u32 = 4 * RENDER_HEIGHT;
+const WINDOW_WIDTH: u32 = 1000;
+const WINDOW_HEIGHT: u32 = 1000;
+
+const RENDER_WIDTH: u32 = WINDOW_WIDTH / SCALE_DOWN;
+const RENDER_HEIGHT: u32 = WINDOW_HEIGHT / SCALE_DOWN;
 
 fn main() -> Result<(), Error> {
     env_logger::init();

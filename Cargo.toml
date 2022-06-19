@@ -15,7 +15,11 @@ debug = true
 criterion = "0.3"
 
 [[bench]]
-name = "bench"
+name = "simple_render_bench"
+harness = false
+
+[[bench]]
+name = "quad_tree_construction"
 harness = false
 
 [lib]

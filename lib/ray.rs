@@ -1,9 +1,9 @@
 use cgmath::InnerSpace;
 
 use crate::{
-    scene::MaterialHandle,
+    scene::{MaterialHandle, Object},
     utils::{
-        aabb::Bounded,
+        aabb::{Bounded, AABB},
         ray::Ray,
         types::{Float, Vec3},
     },
@@ -43,7 +43,6 @@ impl HitRecord {
     }
 }
 
-#[typetag::serde(tag = "type")]
-pub trait Hittable: Sync + Bounded {
+pub trait Hittable: Sync {
     fn hit(&self, ray: &Ray, tmin: Float, tmax: Float) -> Option<HitRecord>;
 }

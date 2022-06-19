@@ -1,7 +1,8 @@
 use crate::color::Color;
 use crate::material::{Dielectric, Emission, Lambertian, Material, Metal};
 use crate::objects::Sphere;
-use crate::scene::{RenderMode, Scene};
+use crate::ray::Hittable;
+use crate::scene::{BvhTree, RenderMode, Scene};
 use crate::utils::{ray::Ray, types::*};
 use rand::{distributions::Uniform, prelude::Distribution};
 use rand::{thread_rng, Rng};
@@ -116,13 +117,13 @@ impl RayTracingDemo {
         println!("{}", serde_json::to_string(&self.scene).unwrap());
     }
 
-    pub fn ray_color(scene: &Scene, ray: &Ray, depth: u8) -> Color {
+    pub fn ray_color(scene: &Scene, world: &dyn Hittable, ray: &Ray, depth: u8) -> Color {
         // Base condition
         if depth >= scene.settings.max_ray_depth {
             return Color::new(0.0, 0.0, 0.0);
         }
 
-        if let Some(hit) = scene.hit(ray, 0.001, Float::INFINITY) {
+        if let Some(hit) = world.hit(ray, 0.001, Float::INFINITY) {
             let (attenuation, scattered) = match scene.settings.mode {
                 RenderMode::Full => scene.material(hit.material).scatter(ray, &hit),
                 RenderMode::Clay => Lambertian::new(Color::new(0.8, 0.8, 0.8)).scatter(ray, &hit),
@@ -137,7 +138,7 @@ impl RayTracingDemo {
             };
 
             if let Some(scattered) = scattered {
-                attenuation * Self::ray_color(scene, &scattered, depth + 1)
+                attenuation * Self::ray_color(scene, world, &scattered, depth + 1)
             } else {
                 attenuation
             }
@@ -148,6 +149,13 @@ impl RayTracingDemo {
 
     pub fn update(&mut self) {
         let current = Instant::now();
+
+        let bvh = self.scene.build_bvh();
+        let world: &dyn Hittable = if self.scene.settings.enable_bvh_tree {
+            &bvh
+        } else {
+            &self.scene
+        };
 
         // Build up the scene
         let ray_origin = self.scene.camera.ray_origin();
@@ -168,7 +176,7 @@ impl RayTracingDemo {
 
                 // Cast a ray
                 let ray = ray_origin.get_ray(u, v);
-                *pixel = *pixel + Self::ray_color(&self.scene, &ray, 0);
+                *pixel = *pixel + Self::ray_color(&self.scene, world, &ray, 0);
             }
 
             // Gamma correction

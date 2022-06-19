@@ -1,6 +1,6 @@
 use crate::{
     ray::{HitRecord, Hittable},
-    scene::MaterialHandle,
+    scene::{MaterialHandle, Object},
     utils::{
         aabb::{Bounded, AABB},
         ray::Ray,
@@ -18,7 +18,6 @@ pub struct Sphere {
     material: MaterialHandle,
 }
 
-#[typetag::serde]
 impl Hittable for Sphere {
     fn hit(&self, ray: &Ray, tmin: Float, tmax: Float) -> Option<HitRecord> {
         let oc = ray.origin - self.center;
@@ -58,3 +57,6 @@ impl Bounded for Sphere {
         }
     }
 }
+
+#[typetag::serde]
+impl Object for Sphere {}
