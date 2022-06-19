@@ -1,4 +1,4 @@
-use crate::{ray::Ray, utils::degrees_to_radians};
+use crate::{ray::Ray, utils::math::degrees_to_radians};
 use cgmath::{InnerSpace, Vector3};
 use derive_new::new;
 use serde::{Deserialize, Serialize};

@@ -1,13 +1,16 @@
-use crate::color::Color;
+use crate::{
+    color::Color,
+    utils::{
+        math::{near_zero, reflect, refract},
+        sample::{sample_unit_sphere_surface, UnitSphereSurfaceSampler},
+    },
+};
 use cgmath::InnerSpace;
 use derive_new::new;
-use rand::{thread_rng, Rng};
+use rand::{distributions::uniform::SampleRange, thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    ray::{HitRecord, Ray},
-    utils::{near_zero, random_on_unit_sphere, reflect, refract},
-};
+use crate::ray::{HitRecord, Ray};
 
 #[typetag::serde(tag = "type")]
 pub trait Material: Sync {
@@ -28,7 +31,7 @@ impl Lambertian {
 #[typetag::serde]
 impl Material for Lambertian {
     fn scatter(&self, ray: &Ray, hit: &HitRecord) -> (Color, Option<Ray>) {
-        let mut scatter_direction = hit.normal + random_on_unit_sphere();
+        let mut scatter_direction = hit.normal + sample_unit_sphere_surface();
 
         if near_zero(scatter_direction) {
             // Catch degenerate scatter direction
@@ -58,7 +61,7 @@ impl Material for Metal {
         let reflected = reflect(ray.direction, hit.normal).normalize();
         let scattered = Ray::new(
             hit.point,
-            reflected + self.fuzz * random_on_unit_sphere(),
+            reflected + self.fuzz * sample_unit_sphere_surface(),
             ray.depth + 1,
         );
 

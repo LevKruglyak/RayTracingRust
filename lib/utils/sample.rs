@@ -2,9 +2,13 @@ use std::ops::RangeInclusive;
 
 use cgmath::InnerSpace;
 use derive_new::new;
-use rand::{distributions::uniform::SampleRange, Rng};
+use rand::{distributions::uniform::SampleRange, thread_rng, Rng};
 
-use super::{aabb::AABB, shapes::{Sphere, Shape}, types::*};
+use super::{
+    aabb::AABB,
+    shapes::{Shape, Sphere},
+    types::*,
+};
 
 /// Uniformly samples vectors in a axis aligned cube region
 #[derive(new, Clone, Copy)]
@@ -67,7 +71,8 @@ impl SampleRange<Vec3> for SphereVolumeSampler {
 }
 
 /// Samples
-struct UnitSphereSurfaceSampler {}
+#[derive(Default)]
+pub struct UnitSphereSurfaceSampler {}
 
 impl SampleRange<Vec3> for UnitSphereSurfaceSampler {
     fn sample_single<R: rand::RngCore + ?Sized>(self, rng: &mut R) -> Vec3 {
@@ -78,4 +83,8 @@ impl SampleRange<Vec3> for UnitSphereSurfaceSampler {
     fn is_empty(&self) -> bool {
         false
     }
+}
+
+pub fn sample_unit_sphere_surface() -> Vec3 {
+    UnitSphereSurfaceSampler::default().sample_single(&mut thread_rng())
 }
