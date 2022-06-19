@@ -1,8 +1,8 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use ray_tracing_rust::{
-    material::Dielectric,
+    materials::Dielectric,
     objects::Sphere,
-    scene::Scene,
+    core::scene::Scene,
     utils::types::{Float, Vec3},
 };
 
@@ -13,8 +13,8 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     // Add a bunch of objects
     for x in -5..5 {
-        for y in -5..5 {
-            for z in -5..5 {
+        for y in -5..50 {
+            for z in -5..50 {
                 scene.add_object(Box::new(Sphere::new(
                     Vec3::new(x as Float, y as Float, z as Float),
                     0.5,
