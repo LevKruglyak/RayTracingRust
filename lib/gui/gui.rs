@@ -1,12 +1,10 @@
 use crate::{
-    camera::Camera,
-    color::Color,
-    sky::{GradientBackground, SkyMap},
+    backgrounds::{GradientBackground, SkyMap, UniformBackground},
+    core::camera::Camera,
+    utils::color::Color,
     utils::types::Vec3,
 };
 use egui::{InnerResponse, Ui};
-
-use crate::sky::UniformBackground;
 
 pub trait Editable {
     fn display_ui(&mut self, ui: &mut Ui, _modified: &mut bool) -> InnerResponse<()> {

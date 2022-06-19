@@ -2,19 +2,14 @@ use cgmath::InnerSpace;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    color::Color,
-    gui::Editable,
+    core::traits::Background,
     utils::{
+        color::Color,
         math::to_spherical_coords,
         ray::Ray,
         types::{Float, PI},
     },
 };
-
-#[typetag::serde(tag = "type")]
-pub trait Background: Sync + Editable {
-    fn sample(&self, ray: &Ray) -> Color;
-}
 
 #[derive(Serialize, Deserialize)]
 pub struct UniformBackground {

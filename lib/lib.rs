@@ -1,13 +1,7 @@
-#![feature(trait_upcasting)]
-
-pub mod camera;
-pub mod color;
-pub mod gui;
-pub mod material;
+pub mod backgrounds;
+pub mod materials;
 pub mod objects;
-pub mod ray;
-pub mod render;
-pub mod scene;
-pub mod sky;
 
+pub mod core;
+pub mod gui;
 pub mod utils;

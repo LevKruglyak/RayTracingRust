@@ -1,10 +1,15 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
+use ray_tracing_rust::core::render::{RenderTarget, render};
+use ray_tracing_rust::utils::color::Color;
+use ray_tracing_rust::backgrounds::{GradientBackground, UniformBackground};
+use ray_tracing_rust::core::scene::Scene;
+use ray_tracing_rust::core::scene::RenderMode;
 use egui::{ClippedMesh, ComboBox, Context, TexturesDelta};
 use egui_wgpu_backend::{BackendError, RenderPass, ScreenDescriptor};
 use pixels::{wgpu, PixelsContext};
-use ray_tracing_rust::{
-    color::Color, gui::Editable, render::RayTracingDemo, scene::RenderMode, sky::*,
-};
-use std::{cell::RefCell, rc::Rc};
+use ray_tracing_rust::gui::gui::Editable;
 use winit::window::Window;
 
 /// Manages all state required for rendering egui over `Pixels`.
@@ -28,7 +33,7 @@ impl Framework {
         height: u32,
         scale_factor: f32,
         pixels: &pixels::Pixels,
-        app: Rc<RefCell<RayTracingDemo>>,
+        target: Rc<RefCell<RenderTarget>>,
     ) -> Self {
         let max_texture_size = pixels.device().limits().max_texture_dimension_2d as usize;
 
@@ -41,7 +46,11 @@ impl Framework {
         };
         let rpass = RenderPass::new(pixels.device(), pixels.render_texture_format(), 1);
         let textures = TexturesDelta::default();
-        let gui = Gui::new(app);
+        let gui = Gui {
+            render_target: target,
+            continuous_mode: false,
+            scene: Scene::from_file("scenes/simple.json"),
+        };
 
         Self {
             egui_ctx,
@@ -121,42 +130,39 @@ impl Framework {
 
 /// Application state
 struct Gui {
-    app: Rc<RefCell<RayTracingDemo>>,
+    render_target: Rc<RefCell<RenderTarget>>,
+    scene: Scene,
+    continuous_mode: bool,
 }
 
 impl Gui {
-    /// Create a `Gui`.
-    fn new(app: Rc<RefCell<RayTracingDemo>>) -> Self {
-        Self { app }
-    }
-
     /// Create the UI using egui.
     fn ui(&mut self, ctx: &Context) {
         egui::Window::new("Settings")
             .open(&mut true)
             .show(ctx, |ui| {
-                let mut app = self.app.borrow_mut();
+                let scene = &mut self.scene;
                 let mut modified = false;
 
                 ui.label("Samples per pixel:");
                 ui.add(egui::Slider::new(
-                    &mut app.scene.settings.samples_per_pixel,
+                    &mut scene.settings.samples_per_pixel,
                     1..=1000,
                 ));
                 ui.label("Max ray depth:");
                 ui.add(egui::Slider::new(
-                    &mut app.scene.settings.max_ray_depth,
+                    &mut scene.settings.max_ray_depth,
                     1..=50,
                 ));
 
                 ui.horizontal(|ui| {
                     ui.label("Render mode:");
                     ComboBox::from_label("")
-                        .selected_text(format!("{:?}", app.scene.settings.mode))
+                        .selected_text(format!("{:?}", scene.settings.mode))
                         .show_ui(ui, |ui| {
                             if ui
                                 .selectable_value(
-                                    &mut app.scene.settings.mode,
+                                    &mut scene.settings.mode,
                                     RenderMode::Full,
                                     "Full",
                                 )
@@ -166,7 +172,7 @@ impl Gui {
                             };
                             if ui
                                 .selectable_value(
-                                    &mut app.scene.settings.mode,
+                                    &mut scene.settings.mode,
                                     RenderMode::Clay,
                                     "Clay",
                                 )
@@ -176,7 +182,7 @@ impl Gui {
                             };
                             if ui
                                 .selectable_value(
-                                    &mut app.scene.settings.mode,
+                                    &mut scene.settings.mode,
                                     RenderMode::Normal,
                                     "Normal",
                                 )
@@ -186,7 +192,7 @@ impl Gui {
                             };
                             if ui
                                 .selectable_value(
-                                    &mut app.scene.settings.mode,
+                                    &mut scene.settings.mode,
                                     RenderMode::Random,
                                     "Random",
                                 )
@@ -198,36 +204,36 @@ impl Gui {
                 });
 
                 ui.add(egui::Checkbox::new(
-                    &mut app.scene.settings.enable_multithreading,
+                    &mut scene.settings.enable_multithreading,
                     "Enable multithreading",
                 ));
                 ui.add(egui::Checkbox::new(
-                    &mut app.scene.settings.enable_bvh_tree,
+                    &mut scene.settings.enable_bvh_tree,
                     "Enable Bvh tree",
                 ));
                 ui.add(egui::Checkbox::new(
-                    &mut app.continuous_mode,
+                    &mut self.continuous_mode,
                     "Continuous mode",
                 ));
 
                 ui.separator();
                 ui.heading("Scene Settings");
                 ui.collapsing("Camera", |ui| {
-                    app.scene.camera.display_ui(ui, &mut modified);
+                    scene.camera.display_ui(ui, &mut modified);
                 });
 
                 ui.collapsing("Background", |ui| {
-                    app.scene.background.display_ui(ui, &mut modified);
+                    scene.background.display_ui(ui, &mut modified);
                     ui.horizontal(|ui| {
                         ui.menu_button("Change background", |ui| {
                             if ui.button("Uniform background").clicked() {
-                                app.scene.background =
+                                scene.background =
                                     Box::new(UniformBackground::new(Color::new(0.8, 0.8, 0.8)));
                                 ui.close_menu();
                                 modified = true;
                             }
                             if ui.button("Gradient background").clicked() {
-                                app.scene.background = Box::new(GradientBackground::new(
+                                scene.background = Box::new(GradientBackground::new(
                                     Color::new(0.5, 0.7, 1.0),
                                     Color::new(1.0, 1.0, 1.0),
                                 ));
@@ -241,14 +247,14 @@ impl Gui {
 
                 ui.separator();
                 if ui.button("Render Image").clicked() {
-                    app.update();
+                    render(&mut *self.render_target.borrow_mut(), &self.scene);
                 }
 
-                ui.label(format!("Last render took: {:?}", app.last_time));
+                //ui.label(format!("Last render took: {:?}", last_time));
                 ui.label(format!("Using {:?} threads", rayon::current_num_threads()));
 
-                if modified && app.continuous_mode {
-                    app.update();
+                if modified && self.continuous_mode {
+                    render(&mut *self.render_target.borrow_mut(), &self.scene);
                 }
             });
     }

@@ -4,11 +4,7 @@ use cgmath::InnerSpace;
 use derive_new::new;
 use rand::{distributions::uniform::SampleRange, thread_rng, Rng};
 
-use super::{
-    aabb::{Bounded, AABB},
-    shapes::Sphere,
-    types::*,
-};
+use super::{aabb::AABB, types::*};
 
 /// Uniformly samples vectors in a axis aligned cube region
 #[derive(new, Clone, Copy)]
@@ -41,43 +37,18 @@ impl SampleRange<Vec3> for CubeSampler {
     }
 }
 
-/// Samples vectors inside of a sphere volume
-pub struct SphereVolumeSampler {
-    sphere: Sphere,
-}
-
-impl SphereVolumeSampler {
-    pub fn unit_sphere() -> Self {
-        Self {
-            sphere: Sphere::unit_sphere(),
-        }
-    }
-}
-
-impl SampleRange<Vec3> for SphereVolumeSampler {
-    fn sample_single<R: rand::RngCore + ?Sized>(self, rng: &mut R) -> Vec3 {
-        let sampler = CubeSampler::new(self.sphere.bounds());
-        loop {
-            let vec = sampler.sample_single(rng);
-            if vec.magnitude() < self.sphere.radius {
-                return vec;
-            }
-        }
-    }
-
-    fn is_empty(&self) -> bool {
-        self.sphere.is_empty()
-    }
-}
-
-/// Samples
 #[derive(Default)]
 pub struct UnitSphereSurfaceSampler {}
 
 impl SampleRange<Vec3> for UnitSphereSurfaceSampler {
     fn sample_single<R: rand::RngCore + ?Sized>(self, rng: &mut R) -> Vec3 {
-        let unit_sphere_sampler = SphereVolumeSampler::unit_sphere();
-        unit_sphere_sampler.sample_single(rng).normalize()
+        let sampler = CubeSampler::from_range(-1.0..=1.0);
+        loop {
+            let vec = sampler.sample_single(rng);
+            if vec.magnitude2() <= 1.0 {
+                return vec.normalize();
+            }
+        }
     }
 
     fn is_empty(&self) -> bool {

@@ -1,11 +1,12 @@
 #![deny(clippy::all)]
 #![forbid(unsafe_code)]
 
+use std::rc::Rc;
+use std::cell::RefCell;
 use crate::gui::Framework;
 use log::error;
 use pixels::{Error, Pixels, SurfaceTexture};
-use ray_tracing_rust::render::RayTracingDemo;
-use std::{cell::RefCell, rc::Rc};
+use ray_tracing_rust::core::render::RenderTarget;
 use winit::dpi::LogicalSize;
 use winit::event::Event;
 use winit::event_loop::{ControlFlow, EventLoop};
@@ -14,9 +15,7 @@ use winit_input_helper::WinitInputHelper;
 
 mod gui;
 
-const DEFAULT_SCENE: &str = "scenes/simple.json";
-
-const SCALE_DOWN: u32 = 4;
+const SCALE_DOWN: u32 = 2;
 
 const WINDOW_WIDTH: u32 = 1000;
 const WINDOW_HEIGHT: u32 = 1000;
@@ -38,11 +37,7 @@ fn main() -> Result<(), Error> {
             .unwrap()
     };
 
-    let app = Rc::new(RefCell::new(RayTracingDemo::load(
-        RENDER_WIDTH,
-        RENDER_HEIGHT,
-        DEFAULT_SCENE,
-    )));
+    let target = Rc::new(RefCell::new(RenderTarget::new(RENDER_WIDTH as usize, RENDER_HEIGHT as usize)));
 
     let (mut pixels, mut framework) = {
         let window_size = window.inner_size();
@@ -54,7 +49,7 @@ fn main() -> Result<(), Error> {
             window_size.height,
             scale_factor,
             &pixels,
-            Rc::clone(&app),
+            Rc::clone(&target),
         );
 
         (pixels, framework)
@@ -91,9 +86,9 @@ fn main() -> Result<(), Error> {
             }
             // Draw the current frame
             Event::RedrawRequested(_) => {
-                // Draw the world
-                if app.borrow().needs_redraw {
-                    app.borrow_mut().draw(pixels.get_frame());
+                if target.borrow().request_redraw {
+                    pixels.get_frame().copy_from_slice(&target.borrow().data[..]);
+                    target.borrow_mut().request_redraw = false;
                 }
 
                 // Prepare egui

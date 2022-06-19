@@ -1,6 +1,7 @@
 use crate::{
-    ray::{HitRecord, Hittable},
-    scene::{MaterialHandle, Object},
+    core::scene::MaterialHandle,
+    core::traits::{Hittable, Object},
+    utils::ray::HitRecord,
     utils::{
         aabb::{Bounded, AABB},
         ray::Ray,
@@ -19,7 +20,7 @@ pub struct Sphere {
 }
 
 impl Hittable for Sphere {
-    fn hit(&self, ray: &Ray, tmin: Float, tmax: Float) -> Option<HitRecord> {
+    fn hit(&self, ray: &Ray, tmin: Float, tmax: Float) -> Option<HitRecord<MaterialHandle>> {
         let oc = ray.origin - self.center;
 
         let a = ray.direction.magnitude2();
