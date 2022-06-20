@@ -1,12 +1,12 @@
 #![deny(clippy::all)]
 #![forbid(unsafe_code)]
 
-use std::rc::Rc;
-use std::cell::RefCell;
 use crate::gui::Framework;
 use log::error;
 use pixels::{Error, Pixels, SurfaceTexture};
 use ray_tracing_rust::core::render::RenderTarget;
+use std::cell::RefCell;
+use std::rc::Rc;
 use winit::dpi::LogicalSize;
 use winit::event::Event;
 use winit::event_loop::{ControlFlow, EventLoop};
@@ -37,7 +37,10 @@ fn main() -> Result<(), Error> {
             .unwrap()
     };
 
-    let target = Rc::new(RefCell::new(RenderTarget::new(RENDER_WIDTH as usize, RENDER_HEIGHT as usize)));
+    let target = Rc::new(RefCell::new(RenderTarget::new(
+        RENDER_WIDTH as usize,
+        RENDER_HEIGHT as usize,
+    )));
 
     let (mut pixels, mut framework) = {
         let window_size = window.inner_size();
@@ -87,7 +90,9 @@ fn main() -> Result<(), Error> {
             // Draw the current frame
             Event::RedrawRequested(_) => {
                 if target.borrow().request_redraw {
-                    pixels.get_frame().copy_from_slice(&target.borrow().data[..]);
+                    pixels
+                        .get_frame()
+                        .copy_from_slice(&target.borrow().data[..]);
                     target.borrow_mut().request_redraw = false;
                 }
 

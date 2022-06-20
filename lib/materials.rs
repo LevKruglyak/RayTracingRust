@@ -1,5 +1,5 @@
 use crate::{
-    core::{traits::Material, scene::MaterialHandle},
+    core::{scene::MaterialHandle, traits::Material},
     utils::{
         color::Color,
         math::{near_zero, reflect, refract},

@@ -8,13 +8,15 @@ use ray_tracing_rust::{
 
 fn criterion_benchmark(c: &mut Criterion) {
     let mut scene = Scene::default();
+    scene.camera.lookfrom.y = -20.0;
+    scene.settings.max_ray_depth = 50;
 
     let default_material = scene.add_material(Box::new(Dielectric::new(1.5)));
 
     // Add a bunch of objects
-    for x in -5..5 {
-        for y in -5..50 {
-            for z in -5..50 {
+    for x in -10..10 {
+        for y in -10..10 {
+            for z in -10..10 {
                 scene.add_object(Box::new(Sphere::new(
                     Vec3::new(x as Float, y as Float, z as Float),
                     0.5,

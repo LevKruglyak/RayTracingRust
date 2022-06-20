@@ -70,7 +70,12 @@ impl SkyMap {
             },
         )
         .expect("could not read image!");
-        println!("loaded '{}'", path);
+        println!(
+            "loaded '{}', dimensions: {},{}",
+            path,
+            image.layer_data.channel_data.pixels.width,
+            image.layer_data.channel_data.pixels.height
+        );
         image.layer_data.channel_data.pixels
     }
 }
@@ -82,7 +87,7 @@ impl Background for SkyMap {
         let u = spherical_coords.x / PI;
         let v = spherical_coords.y / (2.0 * PI);
         let x = (v * self.width as Float) as usize % self.width;
-        let y = self.height - (u * self.height as Float) as usize % self.height;
+        let y = self.height - 1 - (u * self.height as Float) as usize % self.height;
         self.image[x + y * self.width]
     }
 }

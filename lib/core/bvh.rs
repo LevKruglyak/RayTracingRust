@@ -5,7 +5,7 @@ use crate::utils::{
     types::Float,
 };
 
-use super::scene::{ObjectHandle, Scene, MaterialHandle};
+use super::scene::{MaterialHandle, ObjectHandle, Scene};
 
 /// Acceleration strcture for faster ray-scene intersections
 pub struct BvhTree<'s> {
@@ -32,11 +32,6 @@ impl Hittable for BvhTree<'_> {
     fn hit(&self, ray: &Ray, tmin: Float, tmax: Float) -> Option<HitRecord<MaterialHandle>> {
         self.root.hit(ray, tmin, tmax, self.scene)
     }
-}
-
-/// Internal trait
-trait BvhHittable {
-    fn hit(&self, ray: &Ray, tmin: Float, tmax: Float, scene: &Scene) -> Option<HitRecord<MaterialHandle>>;
 }
 
 enum BvhNode {
@@ -90,10 +85,14 @@ impl BvhNode {
             }
         }
     }
-}
 
-impl BvhHittable for BvhNode {
-    fn hit(&self, ray: &Ray, tmin: Float, tmax: Float, scene: &Scene) -> Option<HitRecord<MaterialHandle>> {
+    fn hit(
+        &self,
+        ray: &Ray,
+        tmin: Float,
+        tmax: Float,
+        scene: &Scene,
+    ) -> Option<HitRecord<MaterialHandle>> {
         match self {
             BvhNode::Object(handle) => {
                 return scene.object(*handle).hit(ray, tmin, tmax);
@@ -103,24 +102,7 @@ impl BvhHittable for BvhNode {
                     let hit_left = left.hit(ray, tmin, tmax, scene);
                     let hit_right = right.hit(ray, tmin, tmax, scene);
 
-                    match (hit_left, hit_right) {
-                        (Some(record_left), Some(record_right)) => {
-                            if record_left.t < record_right.t {
-                                return Some(record_left);
-                            } else {
-                                return Some(record_right);
-                            }
-                        }
-                        (Some(record_left), None) => {
-                            return Some(record_left);
-                        }
-                        (None, Some(record_right)) => {
-                            return Some(record_right);
-                        }
-                        _ => {
-                            return None;
-                        }
-                    }
+                    return merge_hitrecords(hit_left, hit_right);
                 }
             }
             _ => {}
@@ -129,3 +111,122 @@ impl BvhHittable for BvhNode {
         None
     }
 }
+
+#[inline]
+fn merge_hitrecords<M>(
+    hit_left: Option<HitRecord<M>>,
+    hit_right: Option<HitRecord<M>>,
+) -> Option<HitRecord<M>> {
+    match (hit_left, hit_right) {
+        (Some(record_left), Some(record_right)) => {
+            if record_left.t < record_right.t {
+                return Some(record_left);
+            } else {
+                return Some(record_right);
+            }
+        }
+        (Some(record_left), None) => {
+            return Some(record_left);
+        }
+        (None, Some(record_right)) => {
+            return Some(record_right);
+        }
+        _ => {
+            return None;
+        }
+    }
+}
+
+// Compressed Bvh tree representation
+// pub struct LinearBvhTree<'a> {
+//     scene: &'a Scene,
+//     nodes: Vec<LinearBvhNode>,
+// }
+
+// enum LinearBvhNode {
+//     Object(AABB, ObjectHandle),
+//     Split(AABB, u32, u32),
+// }
+
+// impl<'a> LinearBvhTree<'a> {
+//     pub fn flatten(bvh: BvhTree<'a>) -> Self {
+//         let mut nodes = Vec::new();
+
+//         fn flatten_internal(bvh_node: BvhNode, start: u32,) -> u32 {
+
+//         }
+
+//         Self { scene: bvh.scene, nodes, }
+//     }
+// }
+
+// impl Hittable for LinearBvhTree<'_> {
+//     fn hit(&self, ray: &Ray, tmin: Float, tmax: Float) -> Option<HitRecord<MaterialHandle>> {
+//         if self.nodes.is_empty() {
+//             return None;
+//         }
+
+//         let mut node = &self.nodes[0];
+//         loop {
+//             match node {
+//                 LinearBvhNode::Object(bounds, handle) => {
+//                     if bounds.hit(ray, tmin, tmax) {
+//                         return self.scene.object(*handle).hit(ray, tmin, tmax);
+//                     }
+//                 }
+//                 LinearBvhNode::Split(bounds, left, right) => {
+//                     if bounds.hit(ray, tmin, tmax) {
+//                         let left = &self.nodes[*left as usize];
+//                         let right = &self.nodes[*right as usize];
+
+//                         return None;
+
+// //                         match (left, right) => {
+
+// //                         }
+
+//                         // let hit_left = left.hit(ray, tmin, tmax, scene);
+//                         // let hit_right = right.hit(ray, tmin, tmax, scene);
+
+//                         // match (hit_left, hit_right) {
+//                         //     (Some(record_left), Some(record_right)) => {
+//                         //         if record_left.t < record_right.t {
+//                         //             return Some(record_left);
+//                         //         } else {
+//                         //             return Some(record_right);
+//                         //         }
+//                         //     }
+//                         //     (Some(record_left), None) => {
+//                         //         return Some(record_left);
+//                         //     }
+//                         //     (None, Some(record_right)) => {
+//                         //         return Some(record_right);
+//                         //     }
+//                         //     _ => {
+//                         //         return None;
+//                         //     }
+//                         // }
+//                     }
+//                 }
+//                 _ => {}
+//             }
+//         }
+//     }
+// }
+
+// // impl LinearBvhNode {
+// //     fn hit(&self, ray: &Ray, tmin: Float, tmax: Float, scene: &Scene) -> Option<HitRecord<MaterialHandle>> {
+// //         match self {
+// //             LinearBvhNode::Object(bounds, handle) => {
+// //                 if bounds.hit(ray, tmin, tmax) {
+// //                     return scene.object(*handle).hit(ray, tmin, tmax);
+// //                 }
+
+// //                 None
+// //             },
+// //             LinearBvhNode::Split(bounds, left, right) => {
+
+// //             },
+// //         }
+// //     }
+// // }

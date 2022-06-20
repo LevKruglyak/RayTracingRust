@@ -1,7 +1,7 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use ray_tracing_rust::{
+    core::render::{render, RenderTarget},
     core::scene::Scene,
-    core::render::{RenderTarget, render},
 };
 
 fn criterion_benchmark(c: &mut Criterion) {

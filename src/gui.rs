@@ -1,15 +1,18 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use ray_tracing_rust::core::render::{RenderTarget, render};
-use ray_tracing_rust::utils::color::Color;
-use ray_tracing_rust::backgrounds::{GradientBackground, UniformBackground};
-use ray_tracing_rust::core::scene::Scene;
-use ray_tracing_rust::core::scene::RenderMode;
 use egui::{ClippedMesh, ComboBox, Context, TexturesDelta};
 use egui_wgpu_backend::{BackendError, RenderPass, ScreenDescriptor};
 use pixels::{wgpu, PixelsContext};
+use ray_tracing_rust::backgrounds::{GradientBackground, SkyMap, UniformBackground};
+use ray_tracing_rust::core::render::{render, RenderTarget};
+use ray_tracing_rust::core::scene::RenderMode;
+use ray_tracing_rust::core::scene::Scene;
 use ray_tracing_rust::gui::gui::Editable;
+use ray_tracing_rust::materials::Dielectric;
+use ray_tracing_rust::objects::Sphere;
+use ray_tracing_rust::utils::color::Color;
+use ray_tracing_rust::utils::types::*;
 use winit::window::Window;
 
 /// Manages all state required for rendering egui over `Pixels`.
@@ -46,10 +49,35 @@ impl Framework {
         };
         let rpass = RenderPass::new(pixels.device(), pixels.render_texture_format(), 1);
         let textures = TexturesDelta::default();
+
+        fn setup_scene() -> Scene {
+            let mut scene = Scene::default();
+            scene.camera.lookfrom.x = -15.0;
+            scene.settings.max_ray_depth = 50;
+            scene.background = Box::new(SkyMap::new("assets/indoor.exr"));
+
+            let default_material = scene.add_material(Box::new(Dielectric::new(1.5)));
+
+            // Add a bunch of objects
+            for x in -2..2 {
+                for y in -5..5 {
+                    for z in -5..5 {
+                        scene.add_object(Box::new(Sphere::new(
+                            Vec3::new(x as Float, y as Float, z as Float),
+                            0.5,
+                            default_material,
+                        )));
+                    }
+                }
+            }
+
+            scene
+        }
+
         let gui = Gui {
             render_target: target,
             continuous_mode: false,
-            scene: Scene::from_file("scenes/simple.json"),
+            scene: setup_scene(),
         };
 
         Self {
@@ -150,10 +178,7 @@ impl Gui {
                     1..=1000,
                 ));
                 ui.label("Max ray depth:");
-                ui.add(egui::Slider::new(
-                    &mut scene.settings.max_ray_depth,
-                    1..=50,
-                ));
+                ui.add(egui::Slider::new(&mut scene.settings.max_ray_depth, 1..=50));
 
                 ui.horizontal(|ui| {
                     ui.label("Render mode:");
