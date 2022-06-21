@@ -26,6 +26,10 @@ harness = false
 name = "bvh_tree_stress"
 harness = false
 
+[[bench]]
+name = "mesh"
+harness = false
+
 [lib]
 name = "ray_tracing_rust"
 path = "lib/lib.rs"

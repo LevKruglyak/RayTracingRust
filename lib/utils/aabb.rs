@@ -1,10 +1,11 @@
 use super::{ray::Ray, types::*};
+use serde::{Deserialize, Serialize};
 
 pub trait Bounded {
     fn bounds(&self) -> AABB;
 }
 
-#[derive(Clone, Copy)]
+#[derive(Serialize, Deserialize, Clone, Copy)]
 pub struct AABB {
     /// Lower left corner of the AABB
     pub min: Vec3,
@@ -15,6 +16,13 @@ pub struct AABB {
 impl AABB {
     pub fn is_empty(&self) -> bool {
         self.min.x <= self.max.x && self.min.y <= self.max.y && self.min.z <= self.max.z
+    }
+
+    pub fn from_point(point: Vec3) -> Self {
+        Self {
+            min: point,
+            max: point,
+        }
     }
 
     /// Returns a bounding box surrouding two bounding boxes

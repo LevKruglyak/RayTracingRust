@@ -1,4 +1,4 @@
-use crate::utils::{ray::Ray, types::*};
+use crate::utils::{aabb::AABB, ray::Ray, types::*};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -7,7 +7,7 @@ use crate::{
 };
 
 use super::{
-    bvh::BvhTree,
+    bvh::{BoundsCollection, BvhTree},
     traits::{Background, Hittable, Material, Object},
 };
 
@@ -107,8 +107,32 @@ impl Scene {
         &self.materials[material.0]
     }
 
-    pub fn build_bvh(&self) -> BvhTree {
+    pub fn build_bvh(&self) -> BvhTree<Scene> {
         BvhTree::build(&self)
+    }
+}
+
+impl BoundsCollection for Scene {
+    fn bounds(&self, handle: u32) -> AABB {
+        self.objects[handle as usize].bounds()
+    }
+
+    fn objects(&self) -> Vec<u32> {
+        let mut objects = Vec::<u32>::new();
+        for (index, _) in self.objects.iter().enumerate() {
+            objects.push(index as u32);
+        }
+        objects
+    }
+
+    fn hit(
+        &self,
+        handle: u32,
+        ray: &Ray,
+        tmin: Float,
+        tmax: Float,
+    ) -> Option<HitRecord<MaterialHandle>> {
+        self.objects[handle as usize].hit(ray, tmin, tmax)
     }
 }
 

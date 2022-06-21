@@ -4,6 +4,7 @@ use ray_tracing_rust::{
     materials::Dielectric,
     objects::Sphere,
     utils::types::{Float, Vec3},
+    core::render::{render, RenderTarget},
 };
 
 fn criterion_benchmark(c: &mut Criterion) {

@@ -5,43 +5,59 @@ use crate::utils::{
     types::Float,
 };
 
-use super::scene::{MaterialHandle, ObjectHandle, Scene};
+use super::scene::MaterialHandle;
 
 /// Acceleration strcture for faster ray-scene intersections
-pub struct BvhTree<'s> {
-    scene: &'s Scene,
+pub struct BvhTree<'s, S> {
+    scene: &'s S,
     root: BvhNode,
 }
 
-impl<'s> BvhTree<'s> {
-    /// Build a Bvh tree from a scene
-    pub fn build(scene: &'s Scene) -> Self {
-        let mut objects: Vec<ObjectHandle> = Vec::new();
-        for (index, _) in scene.objects.iter().enumerate() {
-            objects.push(ObjectHandle(index));
-        }
+pub trait BoundsCollection: Sync {
+    fn hit(
+        &self,
+        handle: u32,
+        ray: &Ray,
+        tmin: Float,
+        tmax: Float,
+    ) -> Option<HitRecord<MaterialHandle>>;
+    fn bounds(&self, handle: u32) -> AABB;
+    fn objects(&self) -> Vec<u32>;
+}
 
+impl<'s, S> BvhTree<'s, S>
+where
+    S: BoundsCollection,
+{
+    /// Build a Bvh tree from a scene
+    pub fn build(scene: &'s S) -> Self {
         Self {
             scene,
-            root: BvhNode::from_list(&mut objects, scene),
+            root: BvhNode::from_list(&mut scene.objects(), scene),
         }
     }
 }
 
-impl Hittable for BvhTree<'_> {
+impl<S> Hittable for BvhTree<'_, S>
+where
+    S: BoundsCollection,
+{
     fn hit(&self, ray: &Ray, tmin: Float, tmax: Float) -> Option<HitRecord<MaterialHandle>> {
         self.root.hit(ray, tmin, tmax, self.scene)
     }
 }
 
-enum BvhNode {
+pub enum BvhNode {
     None,
-    Object(ObjectHandle),
+    Object(u32),
     Split(AABB, Box<BvhNode>, Box<BvhNode>),
 }
 
 impl BvhNode {
-    fn from_list(objects: &mut Vec<ObjectHandle>, scene: &Scene) -> Self {
+    pub fn from_list<S>(objects: &mut Vec<u32>, scene: &S) -> Self
+    where
+        S: BoundsCollection,
+    {
         match objects.len() {
             0 => BvhNode::None,
             1 => BvhNode::Object(objects[0]),
@@ -49,18 +65,17 @@ impl BvhNode {
                 // Calculate bounds for the whole node
                 let bounds = objects
                     .iter()
-                    .map(|object| scene.object(*object).bounds())
+                    .map(|object| scene.bounds(*object))
                     .reduce(|a, b| AABB::surround(a, b))
                     .unwrap_or_default();
 
                 // Sort objects by laying bounding boxes along an axis
                 objects.sort_by(|a, b| {
                     scene
-                        .object(*a)
-                        .bounds()
+                        .bounds(*a)
                         .min
                         .x
-                        .partial_cmp(&scene.object(*b).bounds().min.x)
+                        .partial_cmp(&scene.bounds(*b).min.x)
                         .unwrap()
                 });
 
@@ -86,23 +101,26 @@ impl BvhNode {
         }
     }
 
-    fn hit(
+    pub fn hit<S>(
         &self,
         ray: &Ray,
         tmin: Float,
         tmax: Float,
-        scene: &Scene,
-    ) -> Option<HitRecord<MaterialHandle>> {
+        scene: &S,
+    ) -> Option<HitRecord<MaterialHandle>>
+    where
+        S: BoundsCollection,
+    {
         match self {
             BvhNode::Object(handle) => {
-                return scene.object(*handle).hit(ray, tmin, tmax);
+                return scene.hit(*handle, ray, tmin, tmax);
             }
             BvhNode::Split(bounds, left, right) => {
                 if bounds.hit(ray, tmin, tmax) {
                     let hit_left = left.hit(ray, tmin, tmax, scene);
                     let hit_right = right.hit(ray, tmin, tmax, scene);
 
-                    return merge_hitrecords(hit_left, hit_right);
+                    return merge_optionals(hit_left, hit_right);
                 }
             }
             _ => {}
@@ -112,14 +130,15 @@ impl BvhNode {
     }
 }
 
+/// Commonly used to merge hit record results in a Bvh tree
 #[inline]
-fn merge_hitrecords<M>(
-    hit_left: Option<HitRecord<M>>,
-    hit_right: Option<HitRecord<M>>,
-) -> Option<HitRecord<M>> {
+fn merge_optionals<H>(hit_left: Option<H>, hit_right: Option<H>) -> Option<H>
+where
+    H: PartialOrd,
+{
     match (hit_left, hit_right) {
         (Some(record_left), Some(record_right)) => {
-            if record_left.t < record_right.t {
+            if record_left < record_right {
                 return Some(record_left);
             } else {
                 return Some(record_right);

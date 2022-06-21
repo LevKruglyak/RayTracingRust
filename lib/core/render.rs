@@ -1,3 +1,4 @@
+use cgmath::InnerSpace;
 use rand::thread_rng;
 use rand::{distributions::Uniform, prelude::Distribution};
 use rayon::iter::{IndexedParallelIterator, ParallelIterator};
@@ -39,13 +40,12 @@ fn trace_ray(scene: &Scene, world: &dyn Hittable, ray: &Ray, depth: u8) -> Color
             RenderMode::Full => scene.material(hit.material).scatter(ray, &hit),
             RenderMode::Clay => Lambertian::new(Color::new(0.8, 0.8, 0.8)).scatter(ray, &hit),
             RenderMode::Normal => {
-                // let normal = 0.5 * (hit.normal.normalize() + Vec3::new(1.0, 1.0, 1.0));
-                // return Color::new(normal.x, normal.y, normal.z);
-                return Color::new(0.0, 0.0, 0.0);
-            }
+                let normal = 0.5 * (hit.normal.normalize() + Vec3::new(1.0, 1.0, 1.0));
+                return Color::new(normal.x, normal.y, normal.z);
+            },
             RenderMode::Random => {
                 return Color::new(0.0, 0.0, 0.0);
-            }
+            },
         };
 
         if let Some(scattered) = scattered {

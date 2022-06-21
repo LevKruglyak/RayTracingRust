@@ -53,3 +53,15 @@ impl<M> HitRecord<M> {
         }
     }
 }
+
+impl<T> PartialEq for HitRecord<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.t == other.t
+    }
+}
+
+impl<T> PartialOrd for HitRecord<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.t.partial_cmp(&other.t)
+    }
+}

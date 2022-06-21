@@ -5,11 +5,12 @@ use egui::{ClippedMesh, ComboBox, Context, TexturesDelta};
 use egui_wgpu_backend::{BackendError, RenderPass, ScreenDescriptor};
 use pixels::{wgpu, PixelsContext};
 use ray_tracing_rust::backgrounds::{GradientBackground, SkyMap, UniformBackground};
+use ray_tracing_rust::core::mesh::Mesh;
 use ray_tracing_rust::core::render::{render, RenderTarget};
 use ray_tracing_rust::core::scene::RenderMode;
 use ray_tracing_rust::core::scene::Scene;
 use ray_tracing_rust::gui::gui::Editable;
-use ray_tracing_rust::materials::Dielectric;
+use ray_tracing_rust::materials::{Dielectric, Lambertian, Metal};
 use ray_tracing_rust::objects::Sphere;
 use ray_tracing_rust::utils::color::Color;
 use ray_tracing_rust::utils::types::*;
@@ -52,24 +53,44 @@ impl Framework {
 
         fn setup_scene() -> Scene {
             let mut scene = Scene::default();
-            scene.camera.lookfrom.x = -15.0;
+            scene.camera.lookfrom.x = 2.0;
+            scene.camera.lookfrom.y = 1.0;
+            scene.camera.lookfrom.z = 2.0;
+
             scene.settings.max_ray_depth = 50;
             scene.background = Box::new(SkyMap::new("assets/indoor.exr"));
 
-            let default_material = scene.add_material(Box::new(Dielectric::new(1.5)));
+            let metal_material =
+                scene.add_material(Box::new(Metal::new(Color::new(0.8, 0.2, 0.2), 0.02)));
+            let glass_material =
+                scene.add_material(Box::new(Dielectric::new(1.5)));
+            let ground_material =
+                scene.add_material(Box::new(Lambertian::new(Color::new(0.1, 0.1, 0.1))));
+
+            let mut mesh = Box::new(Mesh::from_file("assets/monkey.obj", glass_material));
+            mesh.build_bvh();
+            scene.add_object(mesh);
+
+            // scene.add_object(Box::new(Sphere::new(Vec3::new(0.0, 0.0, 0.0), 1.0, default_material)));
+
+            // scene.add_object(Box::new(Sphere::new(
+            //     Vec3::new(0.0, -101.0, 0.0),
+            //     100.0,
+            //     ground_material,
+            // )));
 
             // Add a bunch of objects
-            for x in -2..2 {
-                for y in -5..5 {
-                    for z in -5..5 {
-                        scene.add_object(Box::new(Sphere::new(
-                            Vec3::new(x as Float, y as Float, z as Float),
-                            0.5,
-                            default_material,
-                        )));
-                    }
-                }
-            }
+            // for x in -2..2 {
+            //     for y in -5..5 {
+            //         for z in -5..5 {
+            //             scene.add_object(Box::new(Sphere::new(
+            //                 Vec3::new(x as Float, y as Float, z as Float),
+            //                 0.5,
+            //                 default_material,
+            //             )));
+            //         }
+            //     }
+            // }
 
             scene
         }
