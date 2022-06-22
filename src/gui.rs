@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::time::{Duration, Instant};
 
 use egui::{ClippedMesh, ComboBox, Context, TexturesDelta};
 use egui_wgpu_backend::{BackendError, RenderPass, ScreenDescriptor};
@@ -14,6 +15,7 @@ use ray_tracing_rust::materials::{Dielectric, Lambertian, Metal};
 use ray_tracing_rust::objects::Sphere;
 use ray_tracing_rust::utils::color::Color;
 use ray_tracing_rust::utils::types::*;
+use winit::event::WindowEvent;
 use winit::window::Window;
 
 /// Manages all state required for rendering egui over `Pixels`.
@@ -60,24 +62,23 @@ impl Framework {
             scene.settings.max_ray_depth = 50;
             scene.background = Box::new(SkyMap::new("assets/indoor.exr"));
 
+            let lambertian_material =
+                scene.add_material(Box::new(Lambertian::new(Color::new(0.8, 0.2, 0.2))));
             let metal_material =
                 scene.add_material(Box::new(Metal::new(Color::new(0.8, 0.2, 0.2), 0.02)));
-            let glass_material =
-                scene.add_material(Box::new(Dielectric::new(1.5)));
+            let glass_material = scene.add_material(Box::new(Dielectric::new(1.5)));
             let ground_material =
                 scene.add_material(Box::new(Lambertian::new(Color::new(0.1, 0.1, 0.1))));
 
-            let mut mesh = Box::new(Mesh::from_file("assets/monkey.obj", glass_material));
+            let mut mesh = Box::new(Mesh::from_file("assets/fancy_monkey.obj", metal_material));
             mesh.build_bvh();
             scene.add_object(mesh);
 
-            // scene.add_object(Box::new(Sphere::new(Vec3::new(0.0, 0.0, 0.0), 1.0, default_material)));
-
-            // scene.add_object(Box::new(Sphere::new(
-            //     Vec3::new(0.0, -101.0, 0.0),
-            //     100.0,
-            //     ground_material,
-            // )));
+            scene.add_object(Box::new(Sphere::new(
+                Vec3::new(0.0, -101.0, 0.0),
+                100.0,
+                ground_material,
+            )));
 
             // Add a bunch of objects
             // for x in -2..2 {
@@ -98,6 +99,7 @@ impl Framework {
         let gui = Gui {
             render_target: target,
             continuous_mode: false,
+            last_time: Duration::new(0, 0),
             scene: setup_scene(),
         };
 
@@ -181,6 +183,7 @@ impl Framework {
 struct Gui {
     render_target: Rc<RefCell<RenderTarget>>,
     scene: Scene,
+    last_time: Duration,
     continuous_mode: bool,
 }
 
@@ -293,14 +296,18 @@ impl Gui {
 
                 ui.separator();
                 if ui.button("Render Image").clicked() {
+                    let now = Instant::now();
                     render(&mut *self.render_target.borrow_mut(), &self.scene);
+                    self.last_time = Instant::now().duration_since(now);
                 }
 
-                //ui.label(format!("Last render took: {:?}", last_time));
+                ui.label(format!("Last render took: {:?}", self.last_time));
                 ui.label(format!("Using {:?} threads", rayon::current_num_threads()));
 
                 if modified && self.continuous_mode {
+                    let now = Instant::now();
                     render(&mut *self.render_target.borrow_mut(), &self.scene);
+                    self.last_time = Instant::now().duration_since(now);
                 }
             });
     }

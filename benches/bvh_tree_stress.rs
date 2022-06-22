@@ -1,10 +1,10 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use ray_tracing_rust::{
+    core::render::{render, RenderTarget},
     core::scene::Scene,
     materials::Dielectric,
     objects::Sphere,
     utils::types::{Float, Vec3},
-    core::render::{render, RenderTarget},
 };
 
 fn criterion_benchmark(c: &mut Criterion) {
