@@ -89,8 +89,14 @@ pub fn render(target: &mut RenderTarget, scene: &Scene) {
             let v = (y as Float + range.sample(&mut rng)) / (target.height - 1) as Float;
 
             // Cast ray
-            let ray = ray_origin.get_ray(u, v);
-            color = color + trace_ray(&scene, world, &ray, 0);
+            let mut ray_color = trace_ray(&scene, world, &ray_origin.get_ray(u, v), 0);
+
+            // Prevent fireflies
+            ray_color.r = ray_color.r.clamp(0.0, scene.settings.clamp_indirect);
+            ray_color.g = ray_color.g.clamp(0.0, scene.settings.clamp_indirect);
+            ray_color.b = ray_color.b.clamp(0.0, scene.settings.clamp_indirect);
+
+            color = color + ray_color;
         }
 
         // Apply gamma correction

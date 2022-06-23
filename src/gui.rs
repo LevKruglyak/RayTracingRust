@@ -11,7 +11,7 @@ use ray_tracing_rust::core::render::{render, RenderTarget};
 use ray_tracing_rust::core::scene::RenderMode;
 use ray_tracing_rust::core::scene::Scene;
 use ray_tracing_rust::gui::gui::Editable;
-use ray_tracing_rust::materials::{Dielectric, Lambertian, Metal};
+use ray_tracing_rust::materials::{Dielectric, Lambertian, Metal, Emission};
 use ray_tracing_rust::objects::Sphere;
 use ray_tracing_rust::utils::color::Color;
 use ray_tracing_rust::utils::types::*;
@@ -55,27 +55,35 @@ impl Framework {
 
         fn setup_scene() -> Scene {
             let mut scene = Scene::default();
-            scene.camera.lookfrom.x = 2.0;
-            scene.camera.lookfrom.y = 1.0;
-            scene.camera.lookfrom.z = 2.0;
+            scene.camera.lookfrom.x = 10.0;
+            scene.camera.lookfrom.y = 10.0;
+            scene.camera.lookfrom.z = 10.0;
 
             scene.settings.max_ray_depth = 50;
-            scene.background = Box::new(SkyMap::new("assets/indoor.exr"));
+            scene.background = Box::new(SkyMap::new("assets/studio.exr"));
 
             let lambertian_material =
-                scene.add_material(Box::new(Lambertian::new(Color::new(0.8, 0.2, 0.2))));
+                scene.add_material(Box::new(Lambertian::new(Color::new(0.9, 0.2, 0.2))));
             let metal_material =
                 scene.add_material(Box::new(Metal::new(Color::new(0.8, 0.2, 0.2), 0.02)));
             let glass_material = scene.add_material(Box::new(Dielectric::new(1.5)));
             let ground_material =
                 scene.add_material(Box::new(Lambertian::new(Color::new(0.1, 0.1, 0.1))));
+            let emission_material =
+                scene.add_material(Box::new(Emission::new(Color::new(1.0, 1.0, 1.0), 1000.0)));
 
-            let mut mesh = Box::new(Mesh::from_file("assets/fancy_monkey.obj", metal_material));
+            let mut mesh = Box::new(Mesh::from_file("assets/cool_cube.obj", glass_material));
             mesh.build_bvh();
             scene.add_object(mesh);
 
             scene.add_object(Box::new(Sphere::new(
-                Vec3::new(0.0, -101.0, 0.0),
+                Vec3::new(0.0, 4.0, -4.0),
+                1.0,
+                emission_material,
+            )));
+
+            scene.add_object(Box::new(Sphere::new(
+                Vec3::new(0.0, -100.0, 0.0),
                 100.0,
                 ground_material,
             )));
@@ -199,10 +207,12 @@ impl Gui {
                 ui.label("Samples per pixel:");
                 ui.add(egui::Slider::new(
                     &mut scene.settings.samples_per_pixel,
-                    1..=1000,
+                    1..=10000,
                 ));
                 ui.label("Max ray depth:");
                 ui.add(egui::Slider::new(&mut scene.settings.max_ray_depth, 1..=50));
+                ui.label("Clamp indirect:");
+                ui.add(egui::Slider::new(&mut scene.settings.clamp_indirect, 1.0..=100.0));
 
                 ui.horizontal(|ui| {
                     ui.label("Render mode:");

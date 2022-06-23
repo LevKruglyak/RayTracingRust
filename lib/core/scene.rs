@@ -23,6 +23,7 @@ pub enum RenderMode {
 pub struct RenderSettings {
     pub samples_per_pixel: u32,
     pub max_ray_depth: u8,
+    pub clamp_indirect: f32,
     pub enable_multithreading: bool,
     pub enable_bvh_tree: bool,
     pub mode: RenderMode,
@@ -51,6 +52,7 @@ impl Default for Scene {
             settings: RenderSettings {
                 samples_per_pixel: 5,
                 max_ray_depth: 6,
+                clamp_indirect: 3.0,
                 enable_multithreading: true,
                 enable_bvh_tree: true,
                 mode: RenderMode::Full,

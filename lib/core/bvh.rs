@@ -1,3 +1,5 @@
+use rand::{thread_rng, Rng};
+
 use crate::core::traits::Hittable;
 use crate::utils::{
     aabb::AABB,
@@ -69,15 +71,55 @@ impl BvhNode {
                     .reduce(|a, b| AABB::surround(a, b))
                     .unwrap_or_default();
 
+                // See which axis has the greatest variance among centroids
+                let centroids = objects
+                    .iter()
+                    .map(|object| AABB::from_point(scene.bounds(*object).centroid()))
+                    .reduce(|a, b| AABB::surround(a, b))
+                    .unwrap_or_default();
+
+                let spread = centroids.max - centroids.min;
+                let axis = if spread.x > spread.y && spread.x > spread.z {
+                    0
+                } else if spread.y > spread.x && spread.y > spread.z {
+                    1
+                } else {
+                    2
+                };
+
                 // Sort objects by laying bounding boxes along an axis
-                objects.sort_by(|a, b| {
-                    scene
-                        .bounds(*a)
-                        .min
-                        .x
-                        .partial_cmp(&scene.bounds(*b).min.x)
-                        .unwrap()
-                });
+                match axis {
+                    0 => {
+                        objects.sort_by(|a, b| {
+                            scene
+                                .bounds(*a)
+                                .centroid()
+                                .x
+                                .partial_cmp(&scene.bounds(*b).centroid().x)
+                                .unwrap()
+                        });
+                    },
+                    1 => {
+                        objects.sort_by(|a, b| {
+                            scene
+                                .bounds(*a)
+                                .centroid()
+                                .y
+                                .partial_cmp(&scene.bounds(*b).centroid().y)
+                                .unwrap()
+                        });
+                    },
+                    _ => {
+                        objects.sort_by(|a, b| {
+                            scene
+                                .bounds(*a)
+                                .centroid()
+                                .z
+                                .partial_cmp(&scene.bounds(*b).centroid().z)
+                                .unwrap()
+                        });
+                    },
+                }
 
                 // Assign first half to left half and second half to right half
                 let mut left_list = Vec::new();

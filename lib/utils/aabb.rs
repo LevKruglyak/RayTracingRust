@@ -25,6 +25,10 @@ impl AABB {
         }
     }
 
+    pub fn centroid(&self) -> Vec3 {
+        (self.min + self.max) / 2.0
+    }
+
     /// Returns a bounding box surrouding two bounding boxes
     pub fn surround(first: Self, second: Self) -> Self {
         Self {
