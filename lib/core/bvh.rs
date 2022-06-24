@@ -98,7 +98,7 @@ impl BvhNode {
                                 .partial_cmp(&scene.bounds(*b).centroid().x)
                                 .unwrap()
                         });
-                    },
+                    }
                     1 => {
                         objects.sort_by(|a, b| {
                             scene
@@ -108,7 +108,7 @@ impl BvhNode {
                                 .partial_cmp(&scene.bounds(*b).centroid().y)
                                 .unwrap()
                         });
-                    },
+                    }
                     _ => {
                         objects.sort_by(|a, b| {
                             scene
@@ -118,7 +118,7 @@ impl BvhNode {
                                 .partial_cmp(&scene.bounds(*b).centroid().z)
                                 .unwrap()
                         });
-                    },
+                    }
                 }
 
                 // Assign first half to left half and second half to right half

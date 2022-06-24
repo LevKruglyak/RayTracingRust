@@ -7,15 +7,15 @@ use egui_wgpu_backend::{BackendError, RenderPass, ScreenDescriptor};
 use pixels::{wgpu, PixelsContext};
 use ray_tracing_rust::backgrounds::{GradientBackground, SkyMap, UniformBackground};
 use ray_tracing_rust::core::mesh::Mesh;
+use ray_tracing_rust::volume::*;
 use ray_tracing_rust::core::render::{render, RenderTarget};
 use ray_tracing_rust::core::scene::RenderMode;
 use ray_tracing_rust::core::scene::Scene;
 use ray_tracing_rust::gui::gui::Editable;
-use ray_tracing_rust::materials::{Dielectric, Lambertian, Metal, Emission};
+use ray_tracing_rust::materials::{Dielectric, Emission, Lambertian, Metal};
 use ray_tracing_rust::objects::Sphere;
 use ray_tracing_rust::utils::color::Color;
 use ray_tracing_rust::utils::types::*;
-use winit::event::WindowEvent;
 use winit::window::Window;
 
 /// Manages all state required for rendering egui over `Pixels`.
@@ -55,9 +55,9 @@ impl Framework {
 
         fn setup_scene() -> Scene {
             let mut scene = Scene::default();
-            scene.camera.lookfrom.x = 10.0;
-            scene.camera.lookfrom.y = 10.0;
-            scene.camera.lookfrom.z = 10.0;
+            scene.camera.lookfrom.x = 2.0;
+            scene.camera.lookfrom.y = 2.0;
+            scene.camera.lookfrom.z = 2.0;
 
             scene.settings.max_ray_depth = 50;
             scene.background = Box::new(SkyMap::new("assets/studio.exr"));
@@ -70,23 +70,32 @@ impl Framework {
             let ground_material =
                 scene.add_material(Box::new(Lambertian::new(Color::new(0.1, 0.1, 0.1))));
             let emission_material =
-                scene.add_material(Box::new(Emission::new(Color::new(1.0, 1.0, 1.0), 1000.0)));
+                scene.add_material(Box::new(Emission::new(Color::new(1.0, 1.0, 1.0), 50.0)));
+            let isotropic_material =
+                scene.add_material(Box::new(Isotropic::new(Color::new(1.0, 1.0, 1.0))));
 
-            let mut mesh = Box::new(Mesh::from_file("assets/cool_cube.obj", glass_material));
+            let mut mesh = Box::new(Mesh::from_file("assets/fancy_monkey.obj", glass_material));
             mesh.build_bvh();
             scene.add_object(mesh);
 
-            scene.add_object(Box::new(Sphere::new(
-                Vec3::new(0.0, 4.0, -4.0),
-                1.0,
-                emission_material,
-            )));
+            // scene.add_object(Box::new(Sphere::new(
+            //     Vec3::new(0.0, 4.0, -4.0),
+            //     1.0,
+            //     emission_material,
+            // )));
 
-            scene.add_object(Box::new(Sphere::new(
-                Vec3::new(0.0, -100.0, 0.0),
-                100.0,
-                ground_material,
-            )));
+            // let sphere = Box::new(Sphere::new(
+            //     Vec3::new(0.0, 0.0, 0.0),
+            //     100.0,
+            //     isotropic_material,
+            // ));
+            // scene.add_object(Box::new(Volume::new(sphere, 0.1)));
+
+            // scene.add_object(Box::new(Sphere::new(
+            //     Vec3::new(0.0, -101.0, 0.0),
+            //     100.0,
+            //     ground_material,
+            // )));
 
             // Add a bunch of objects
             // for x in -2..2 {
@@ -212,7 +221,10 @@ impl Gui {
                 ui.label("Max ray depth:");
                 ui.add(egui::Slider::new(&mut scene.settings.max_ray_depth, 1..=50));
                 ui.label("Clamp indirect:");
-                ui.add(egui::Slider::new(&mut scene.settings.clamp_indirect, 1.0..=100.0));
+                ui.add(egui::Slider::new(
+                    &mut scene.settings.clamp_indirect,
+                    1.0..=100.0,
+                ));
 
                 ui.horizontal(|ui| {
                     ui.label("Render mode:");

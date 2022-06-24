@@ -73,12 +73,18 @@ impl Mesh {
         Self::from_buffers(vertices, obj.indices, material)
     }
 
-    pub fn from_buffers(vertices: Vec<Vertex>, indices: Vec<u32>, material: MaterialHandle) -> Self {
+    pub fn from_buffers(
+        vertices: Vec<Vertex>,
+        indices: Vec<u32>,
+        material: MaterialHandle,
+    ) -> Self {
         let mut triangles = Vec::<Triangle>::new();
 
         for triangle in indices.chunks_exact(3) {
-            let e1 = vertices[triangle[0] as usize].position - vertices[triangle[1] as usize].position;
-            let e2 = vertices[triangle[2] as usize].position - vertices[triangle[1] as usize].position;
+            let e1 =
+                vertices[triangle[0] as usize].position - vertices[triangle[1] as usize].position;
+            let e2 =
+                vertices[triangle[2] as usize].position - vertices[triangle[1] as usize].position;
             let normal = e2.cross(e1).normalize();
 
             triangles.push(Triangle {
@@ -222,4 +228,8 @@ impl Bounded for Mesh {
 }
 
 #[typetag::serde]
-impl Object for Mesh {}
+impl Object for Mesh {
+    fn material(&self) -> MaterialHandle {
+        self.material
+    }
+}

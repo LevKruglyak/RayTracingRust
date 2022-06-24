@@ -52,7 +52,7 @@ impl Default for Scene {
             settings: RenderSettings {
                 samples_per_pixel: 5,
                 max_ray_depth: 6,
-                clamp_indirect: 3.0,
+                clamp_indirect: 10.0,
                 enable_multithreading: true,
                 enable_bvh_tree: true,
                 mode: RenderMode::Full,

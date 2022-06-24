@@ -15,7 +15,9 @@ pub trait Hittable: Sync {
 }
 
 #[typetag::serde(tag = "type")]
-pub trait Object: Sync + Hittable + Bounded {}
+pub trait Object: Sync + Hittable + Bounded {
+    fn material(&self) -> MaterialHandle;
+}
 
 #[typetag::serde(tag = "type")]
 pub trait Material: Sync {

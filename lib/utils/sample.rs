@@ -38,17 +38,35 @@ impl SampleRange<Vec3> for CubeSampler {
 }
 
 #[derive(Default)]
-pub struct UnitSphereSurfaceSampler {}
+pub struct UnitSphereVolumeSampler {}
 
-impl SampleRange<Vec3> for UnitSphereSurfaceSampler {
+impl SampleRange<Vec3> for UnitSphereVolumeSampler {
     fn sample_single<R: rand::RngCore + ?Sized>(self, rng: &mut R) -> Vec3 {
         let sampler = CubeSampler::from_range(-1.0..=1.0);
         loop {
             let vec = sampler.sample_single(rng);
             if vec.magnitude2() <= 1.0 {
-                return vec.normalize();
+                return vec;
             }
         }
+    }
+
+    fn is_empty(&self) -> bool {
+        false
+    }
+}
+
+pub fn sample_unit_sphere_volume() -> Vec3 {
+    UnitSphereVolumeSampler::default().sample_single(&mut thread_rng())
+}
+
+#[derive(Default)]
+pub struct UnitSphereSurfaceSampler {}
+
+impl SampleRange<Vec3> for UnitSphereSurfaceSampler {
+    fn sample_single<R: rand::RngCore + ?Sized>(self, rng: &mut R) -> Vec3 {
+        let sampler = UnitSphereVolumeSampler::default();
+        sampler.sample_single(rng).normalize()
     }
 
     fn is_empty(&self) -> bool {

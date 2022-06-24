@@ -15,7 +15,7 @@ use winit_input_helper::WinitInputHelper;
 
 mod gui;
 
-const SCALE_DOWN: u32 = 2;
+const SCALE_DOWN: u32 = 1;
 
 const WINDOW_WIDTH: u32 = 1000;
 const WINDOW_HEIGHT: u32 = 1000;

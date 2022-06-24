@@ -60,4 +60,8 @@ impl Bounded for Sphere {
 }
 
 #[typetag::serde]
-impl Object for Sphere {}
+impl Object for Sphere {
+    fn material(&self) -> MaterialHandle {
+        self.material
+    }
+}
