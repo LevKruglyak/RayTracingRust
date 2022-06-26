@@ -1,5 +1,6 @@
 use crate::utils::{
     aabb::{Bounded, AABB},
+    math::degrees_to_radians,
     ray::{HitRecord, Ray},
     types::{Float, Vec3},
 };
@@ -15,12 +16,13 @@ use super::{
     traits::{Hittable, Object},
 };
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Triangle {
     vertices: [u32; 3],
     normal: Vec3,
 }
 
+#[derive(Debug)]
 pub struct Vertex {
     position: Vec3,
     normal: Vec3,
@@ -123,21 +125,21 @@ impl Hittable for Mesh {
     fn hit(&self, ray: &Ray, tmin: Float, tmax: Float) -> Option<HitRecord<MaterialHandle>> {
         return self.bvh_root.hit(ray, tmin, tmax, self);
 
-        //        let mut result = None;
-        //        let mut closest_so_far = tmax;
+        //let mut result = None;
+        //let mut closest_so_far = tmax;
 
-        //        for triangle in &self.triangles {
-        //            //if object.bounds().hit(ray, tmin, tmax) {
-        //            if let Some(hit) = triangle.hit(ray, tmin, closest_so_far, self.material, &self) {
-        //                if closest_so_far > hit.t {
-        //                    closest_so_far = hit.t;
-        //                    result = Some(hit);
-        //                }
-        //            }
-        //            //}
+        //for triangle in &self.triangles {
+        //    //if object.bounds().hit(ray, tmin, tmax) {
+        //    if let Some(hit) = triangle.hit(ray, tmin, closest_so_far, self.material, &self) {
+        //        if closest_so_far > hit.t {
+        //            closest_so_far = hit.t;
+        //            result = Some(hit);
         //        }
+        //    }
+        //    //}
+        //}
 
-        //        result
+        //result
     }
 }
 
@@ -180,7 +182,12 @@ impl Triangle {
         }
 
         let t = f * e2.dot(q);
-        let normal = u * v1.normal + v * v2.normal + (1.0 - u - v) * v0.normal;
+        let mut normal = u * v1.normal + v * v2.normal + (1.0 - u - v) * v0.normal;
+
+        if normal.angle(self.normal).0 > degrees_to_radians(0.0) {
+            normal = self.normal;
+        }
+
         if t > tmin {
             Some(HitRecord::new(ray.at(t), normal, t, ray, material))
         } else {
@@ -193,12 +200,15 @@ impl Triangle {
 impl BoundsCollection for Mesh {
     fn bounds(&self, handle: u32) -> AABB {
         let triangle = &self.triangles[handle as usize];
-        AABB::surround(
-            AABB::from_point(self.vertices[triangle.vertices[0] as usize].position),
+        AABB::epsilon_expand(
             AABB::surround(
-                AABB::from_point(self.vertices[triangle.vertices[1] as usize].position),
-                AABB::from_point(self.vertices[triangle.vertices[2] as usize].position),
+                AABB::from_point(self.vertices[triangle.vertices[0] as usize].position),
+                AABB::surround(
+                    AABB::from_point(self.vertices[triangle.vertices[1] as usize].position),
+                    AABB::from_point(self.vertices[triangle.vertices[2] as usize].position),
+                ),
             ),
+            0.01,
         )
     }
 

@@ -1,11 +1,20 @@
 use crate::{
-    core::{traits::{Hittable, Material, Object}, scene::MaterialHandle},
-    utils::{types::{Float, Vec3}, ray::{Ray, HitRecord}, color::Color, aabb::{Bounded, AABB}, sample::sample_unit_sphere_volume},
+    core::{
+        scene::MaterialHandle,
+        traits::{Hittable, Material, Object},
+    },
+    utils::{
+        aabb::{Bounded, AABB},
+        color::Color,
+        ray::{HitRecord, Ray},
+        sample::sample_unit_sphere_volume,
+        types::{Float, Vec3},
+    },
 };
 use cgmath::InnerSpace;
-use rand::{thread_rng, Rng};
-use serde::{Serialize, Deserialize};
 use derive_new::new;
+use rand::{thread_rng, Rng};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct Volume {
@@ -14,10 +23,7 @@ pub struct Volume {
 }
 
 impl Volume {
-    pub fn new(
-        boundary: Box<dyn Object>,
-        density: Float,
-    ) -> Self {
+    pub fn new(boundary: Box<dyn Object>, density: Float) -> Self {
         Self {
             boundary,
             neg_inv_density: -1.0 / density,
@@ -56,7 +62,13 @@ impl Hittable for Volume {
         }
 
         let t = hit1.t + hit_distance / ray_length;
-        Some(HitRecord::new(ray.at(t), Vec3::new(1.0, 0.0, 0.0), t, ray, self.boundary.material()))
+        Some(HitRecord::new(
+            ray.at(t),
+            Vec3::new(1.0, 0.0, 0.0),
+            t,
+            ray,
+            self.boundary.material(),
+        ))
     }
 }
 
@@ -68,7 +80,10 @@ pub struct Isotropic {
 #[typetag::serde]
 impl Material for Isotropic {
     fn scatter(&self, _: &Ray, hit: &HitRecord<MaterialHandle>) -> (Color, Option<Ray>) {
-        (self.color, Some(Ray::new(hit.point, sample_unit_sphere_volume())))
+        (
+            self.color,
+            Some(Ray::new(hit.point, sample_unit_sphere_volume())),
+        )
     }
 }
 

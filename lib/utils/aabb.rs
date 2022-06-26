@@ -29,6 +29,14 @@ impl AABB {
         (self.min + self.max) / 2.0
     }
 
+    pub fn dimensions(&self) -> Vec3 {
+        Vec3::new(
+            self.max.x - self.min.x,
+            self.max.y - self.min.y,
+            self.max.z - self.min.z,
+        )
+    }
+
     /// Returns a bounding box surrouding two bounding boxes
     pub fn surround(first: Self, second: Self) -> Self {
         Self {
@@ -43,6 +51,30 @@ impl AABB {
                 first.max.z.max(second.max.z),
             ),
         }
+    }
+
+    /// Ensures that no coordinate dimension of the bounding box is below a given epsilon
+    pub fn epsilon_expand(bounds: Self, epsilon: f32) -> Self {
+        let dimensions = bounds.dimensions();
+        let centroid = bounds.centroid();
+        let mut result = bounds.clone();
+
+        if dimensions.x < epsilon {
+            result.min.x = centroid.x - epsilon;
+            result.max.x = centroid.x + epsilon;
+        }
+
+        if dimensions.y < epsilon {
+            result.min.y = centroid.y - epsilon;
+            result.max.y = centroid.y + epsilon;
+        }
+
+        if dimensions.z < epsilon {
+            result.min.z = centroid.z - epsilon;
+            result.max.z = centroid.z + epsilon;
+        }
+
+        result
     }
 
     /// Returns true if the ray hits the bounding box

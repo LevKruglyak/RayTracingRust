@@ -32,3 +32,8 @@ pub fn to_spherical_coords(vector: Vec3) -> Vec2 {
 pub fn degrees_to_radians(degrees: Float) -> Float {
     degrees * PI / 180.0
 }
+
+#[inline]
+pub fn radians_to_degrees(radians: Float) -> Float {
+    radians * 180.0 / PI
+}

@@ -7,15 +7,15 @@ use egui_wgpu_backend::{BackendError, RenderPass, ScreenDescriptor};
 use pixels::{wgpu, PixelsContext};
 use ray_tracing_rust::backgrounds::{GradientBackground, SkyMap, UniformBackground};
 use ray_tracing_rust::core::mesh::Mesh;
-use ray_tracing_rust::volume::*;
 use ray_tracing_rust::core::render::{render, RenderTarget};
 use ray_tracing_rust::core::scene::RenderMode;
 use ray_tracing_rust::core::scene::Scene;
 use ray_tracing_rust::gui::gui::Editable;
-use ray_tracing_rust::materials::{Dielectric, Emission, Lambertian, Metal};
+use ray_tracing_rust::materials::{Dielectric, Emission, Lambertian, Metal, MixMaterial};
 use ray_tracing_rust::objects::Sphere;
 use ray_tracing_rust::utils::color::Color;
 use ray_tracing_rust::utils::types::*;
+use ray_tracing_rust::volume::*;
 use winit::window::Window;
 
 /// Manages all state required for rendering egui over `Pixels`.
@@ -55,26 +55,37 @@ impl Framework {
 
         fn setup_scene() -> Scene {
             let mut scene = Scene::default();
-            scene.camera.lookfrom.x = 2.0;
+            scene.camera.lookfrom.x = -3.0;
             scene.camera.lookfrom.y = 2.0;
-            scene.camera.lookfrom.z = 2.0;
+            scene.camera.lookfrom.z = 4.0;
 
-            scene.settings.max_ray_depth = 50;
-            scene.background = Box::new(SkyMap::new("assets/studio.exr"));
+            scene.camera.lookat.x = 0.0;
+            scene.camera.lookat.y = 2.0;
+            scene.camera.lookat.z = -1.0;
+
+            scene.settings.max_ray_depth = 3;
+            scene.background = Box::new(SkyMap::new("assets/lake.exr"));
 
             let lambertian_material =
                 scene.add_material(Box::new(Lambertian::new(Color::new(0.9, 0.2, 0.2))));
             let metal_material =
                 scene.add_material(Box::new(Metal::new(Color::new(0.8, 0.2, 0.2), 0.02)));
             let glass_material = scene.add_material(Box::new(Dielectric::new(1.5)));
-            let ground_material =
-                scene.add_material(Box::new(Lambertian::new(Color::new(0.1, 0.1, 0.1))));
+            let ground_material = scene.add_material(Box::new(MixMaterial::new(
+                Box::new(Metal::new(Color::new(0.1, 0.1, 0.1), 0.0)),
+                Box::new(Lambertian::new(Color::new(0.4, 0.4, 0.4))),
+                0.5,
+            )));
             let emission_material =
                 scene.add_material(Box::new(Emission::new(Color::new(1.0, 1.0, 1.0), 50.0)));
             let isotropic_material =
                 scene.add_material(Box::new(Isotropic::new(Color::new(1.0, 1.0, 1.0))));
 
-            let mut mesh = Box::new(Mesh::from_file("assets/fancy_monkey.obj", glass_material));
+            let mut mesh = Box::new(Mesh::from_file("assets/house.obj", lambertian_material));
+            mesh.build_bvh();
+            scene.add_object(mesh);
+
+            let mut mesh = Box::new(Mesh::from_file("assets/plane.obj", ground_material));
             mesh.build_bvh();
             scene.add_object(mesh);
 
@@ -90,12 +101,6 @@ impl Framework {
             //     isotropic_material,
             // ));
             // scene.add_object(Box::new(Volume::new(sphere, 0.1)));
-
-            // scene.add_object(Box::new(Sphere::new(
-            //     Vec3::new(0.0, -101.0, 0.0),
-            //     100.0,
-            //     ground_material,
-            // )));
 
             // Add a bunch of objects
             // for x in -2..2 {
@@ -220,11 +225,10 @@ impl Gui {
                 ));
                 ui.label("Max ray depth:");
                 ui.add(egui::Slider::new(&mut scene.settings.max_ray_depth, 1..=50));
-                ui.label("Clamp indirect:");
-                ui.add(egui::Slider::new(
-                    &mut scene.settings.clamp_indirect,
-                    1.0..=100.0,
-                ));
+                ui.horizontal(|ui| {
+                    ui.label("Clamp:");
+                    ui.add(egui::DragValue::new(&mut scene.settings.clamp_indirect).speed(0.5));
+                });
 
                 ui.horizontal(|ui| {
                     ui.label("Render mode:");
