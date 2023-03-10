@@ -1,4 +1,4 @@
-# A multi-threaded CPU raytracer written in Rust (Still WIP)
+# A multi-threaded CPU raytracer written in Rust (Moved to https://github.com/LevKruglyak/voidray)
 
 Based (loosely) off of the tutorial series: https://raytracing.github.io/books/RayTracingInOneWeekend.html.
 
